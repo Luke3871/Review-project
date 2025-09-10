@@ -12,7 +12,6 @@ __pycache__/
 
 # 환경파일
 .env
-config*.py
 
 # IDE 관련
 .vscode/
