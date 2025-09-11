@@ -18,7 +18,7 @@ last_updated : 2025.08.30
 import sys
 import os
 
-from .config_daiso import CARD_ITEM, DROPDOWN_BUTTON, DROPDOWN_OPTION
+from config_daiso import CARD_ITEM, DROPDOWN_BUTTON, DROPDOWN_OPTION
 
 from typing import Dict
 from selenium.webdriver.support.ui import WebDriverWait as W

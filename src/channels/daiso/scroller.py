@@ -24,7 +24,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from .config_daiso import CARD_ITEM
+from config_daiso import CARD_ITEM
 
 #//==============================================================================//#
 # 기존 단순 함수 (하위 호환성)

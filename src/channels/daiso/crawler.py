@@ -22,12 +22,13 @@ from typing import Dict, List
 
 # 현재 스크립트 경로를 기준으로 src 디렉토리 추가
 current_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.join(current_dir, '..', 'src')
+src_dir = os.path.join(current_dir, "..",  'src')
 sys.path.insert(0, src_dir)
 
+
 # 다이소 모듈 import
-from channels.daiso.parser import DaisoProductCollector
-from channels.daiso.driver import DriverConfig
+from parser import DaisoProductCollector
+from driver import DriverConfig
 
 #//==============================================================================//#
 # 설정
@@ -140,6 +141,7 @@ def crawl_daiso_reviews():
     print("\n=== 다이소 리뷰 크롤링 시작 ===")
     
     # CSV 파일들 읽어오기
+    import re
     import glob
     import pandas as pd
     from bs4 import BeautifulSoup
@@ -149,7 +151,9 @@ def crawl_daiso_reviews():
     from random import randint
     
     products_dir = "data_daiso/products_daiso"
-    csv_files = glob.glob(os.path.join(products_dir, "daiso_*.csv"))
+    csv_files = []
+    csv_files.extend(glob.glob(os.path.join(products_dir, "daiso_skincare_SALES_*.csv")))
+    csv_files.extend(glob.glob(os.path.join(products_dir, "daiso_accessories.csv")))
     
     if not csv_files:
         print("제품 CSV 파일을 찾을 수 없습니다.")
@@ -157,7 +161,7 @@ def crawl_daiso_reviews():
     
     print(f"발견된 CSV 파일: {len(csv_files)}개")
     
-    # 모든 제품 URL 수집
+    # 모든 제품 URL 수집    
     all_products = []
     for csv_file in csv_files:
         if "accessories" in csv_file:  # 악세서리 파일은 제외
@@ -267,7 +271,7 @@ def collect_product_reviews(driver, product_info, product_price, max_pages=None)
     from selenium.webdriver.common.by import By
     from random import randint
     import pandas as pd
-    
+    import re
     all_reviews = []
     page = 1
     
@@ -320,7 +324,7 @@ def collect_product_reviews(driver, product_info, product_price, max_pages=None)
                 # 다음 페이지 클릭
                 driver.execute_script("arguments[0].click();", next_button)
                 page += 1
-                time.sleep(randint(1,3))
+                time.sleep(randint(1, 3))
                 
             except Exception:
                 print("다음 페이지 버튼을 찾을 수 없습니다.")
@@ -336,7 +340,7 @@ def collect_product_reviews(driver, product_info, product_price, max_pages=None)
         os.makedirs(reviews_dir, exist_ok=True)
         
         # 제품별 파일명 생성
-        safe_name = product_info['name'].replace('/', '_').replace('\\', '_')[:50]
+        safe_name = re.sub(r'[<>:"/\\|?*]', '_', product_info['name'])[:50]
         filename = f"{product_info['category']}_{product_info['sort_type']}_{safe_name}_reviews.csv"
         filepath = os.path.join(reviews_dir, filename)
         
@@ -353,7 +357,6 @@ def collect_product_reviews(driver, product_info, product_price, max_pages=None)
 def main():
 
     crawl_daiso_reviews()
-
     
     print("\n프로그램 종료")
 

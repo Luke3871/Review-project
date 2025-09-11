@@ -25,7 +25,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # 다이소 모듈 import
-from channels.daiso.config_daiso import (
+from config_daiso import (
     CARD_ITEM, 
     CARD_THUMB_LINK, 
     CARD_ITEM_NAME,
@@ -35,9 +35,9 @@ from channels.daiso.config_daiso import (
     EXCLUDE_KEYWORDS,
     SORT_TEXT_MAP
 )
-from channels.daiso.driver import make_driver, close_driver, DriverConfig
-from channels.daiso.navigator import DaisoNavigator
-from channels.daiso.scroller import DaisoScroller
+from driver import make_driver, close_driver, DriverConfig
+from navigator import DaisoNavigator
+from scroller import DaisoScroller
 
 #//==============================================================================//#
 # DaisoProductCollector Class
