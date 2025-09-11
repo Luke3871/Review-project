@@ -1,3 +1,6 @@
+import sys, os
+sys.path.append(os.path.dirname(__file__))
+
 import streamlit as st
 from tab1_daiso_section import render_daiso_section
 from tab2_coupang_section import render_coupang_section
