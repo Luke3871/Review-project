@@ -11,7 +11,7 @@ import re
 
 def load_daiso_data():
     """다이소 데이터 로딩"""
-    daiso_dir = "../src/channels/daiso/data_daiso/reviews_daiso"
+    daiso_dir = "../data/data_daiso/raw_data/reviews_daiso"
     csv_files = glob.glob(os.path.join(daiso_dir, "*_reviews.csv"))
     
     all_reviews = []
@@ -57,9 +57,18 @@ def extract_rating(rating_str):
 
 def load_korean_stopwords():
     """한국어 불용어 로딩"""
+    my_stopwords = [
+            '것', '수', '있', '하', '되', '그', '이', '저', '때', '더', '또', '같', '좋', 
+            '정말', '너무', '진짜', '완전', '그냥', '약간', '조금', '많이', '잘', '안',
+            '하지만', '그런데', '그리고', '또한', '그래서', '따라서', '하면', '하니까',
+            '입니다', '습니다', '해요', '이에요', '예요', '이죠', '네요', '어요', '재구매',
+            '감사합니다', '잘쓸게요', '잘쓸께요', '같아요', "이거", "같이", "사용하기"
+        ]
     try:
-        with open('stopwords_origin.txt', 'r', encoding='utf-8') as f:
-            stopwords = [line.strip() for line in f if line.strip()]
+        with open(r'C:\Users\lluke\OneDrive\바탕 화면\ReviewFW_LG_hnh\src\words_dictionary\stopwords\stopwords_origin.txt', 'r', encoding='utf-8') as f:
+            stopwords1 = [line.strip() for line in f if line.strip()]
+            stopwords_set = set(stopwords1)
+            stopwords = stopwords_set.union(my_stopwords)
         return set(stopwords)
     except:
         return set([
@@ -67,7 +76,7 @@ def load_korean_stopwords():
             '정말', '너무', '진짜', '완전', '그냥', '약간', '조금', '많이', '잘', '안',
             '하지만', '그런데', '그리고', '또한', '그래서', '따라서', '하면', '하니까',
             '입니다', '습니다', '해요', '이에요', '예요', '이죠', '네요', '어요', '재구매',
-            '감사합니다', '잘쓸게요', '잘쓸께요', '같아요', 
+            '감사합니다', '잘쓸게요', '잘쓸께요', '같아요', "이거", "같이", "사용하기"
         ])
 
 def preprocess_korean_text(text):
@@ -227,9 +236,9 @@ def render_daiso_section():
     col2.metric("메이크업", f"{makeup_reviews:,}")
     col3.metric("스킨케어", f"{skincare_reviews:,}")
     
-    # 필터링 옵션
+# 필터링 옵션
     st.subheader("필터 설정")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         if 'category' in daiso_df.columns:
@@ -250,20 +259,46 @@ def render_daiso_section():
         else:
             selected_sort = '전체'
     
+    with col3:
+        period_options = ['전체', '1개월', '3개월', '6개월', '1년']
+        selected_period = st.selectbox("기간", period_options, key="daiso_period")
+    
     # 데이터 필터링
     filtered_df = daiso_df.copy()
+    
+    # 카테고리 필터링
     if selected_category != '전체' and 'category' in daiso_df.columns:
         filtered_df = filtered_df[filtered_df['category'] == selected_category]
+    
+    # 정렬방식 필터링
     if selected_sort != '전체' and 'sort_type' in daiso_df.columns:
         filtered_df = filtered_df[filtered_df['sort_type'] == selected_sort]
     
-    st.markdown("---")
+    # 기간 필터링
+    if selected_period != '전체' and 'review_date' in filtered_df.columns:
+        # 현재 날짜에서 선택된 기간만큼 뺀 날짜 계산
+        from datetime import datetime, timedelta
+        current_date = datetime.now()
+        
+        if selected_period == '1개월':
+            cutoff_date = current_date - timedelta(days=30)
+        elif selected_period == '3개월':
+            cutoff_date = current_date - timedelta(days=90)
+        elif selected_period == '6개월':
+            cutoff_date = current_date - timedelta(days=180)
+        elif selected_period == '1년':
+            cutoff_date = current_date - timedelta(days=365)
+        
+        # 날짜 데이터가 있는 것만 필터링
+        filtered_df = filtered_df.dropna(subset=['review_date'])
+        filtered_df = filtered_df[filtered_df['review_date'] >= cutoff_date]
+        st.markdown("---")
     
     # 분석 서브탭 - 6개 탭으로 확장
-    tab_names = ["전체 트렌드", "제품별 분석", "랭킹 분석", "성과 분석", "제품 상세 분석", "분석 보고서"]
+    tab_names = ["전체 트렌드", "제품별 분석", "랭킹 분석", "성과 분석", "제품 상세 분석", "주요 브랜드 분석", "분석 보고서"]
     tabs = st.tabs(tab_names)
     
-    # subtab1: 전체 트렌드
+# subtab1: 전체 트렌드
     with tabs[0]:
         st.subheader("전체 리뷰 트렌드")
         
@@ -271,16 +306,9 @@ def render_daiso_section():
             time_df = filtered_df.dropna(subset=['review_date'])
             
             if not time_df.empty:
-                time_unit = st.radio("시간 단위", ["일별", "주별", "월별"], horizontal=True, key="daiso_time_unit")
+                time_unit = st.radio("시간 단위", ["주별", "월별"], horizontal=True, key="daiso_time_unit")
                 
-                if time_unit == "일별":
-                    daily_counts = time_df.groupby(time_df['review_date'].dt.date).size()
-                    fig = px.line(x=daily_counts.index, y=daily_counts.values,
-                                title="일별 리뷰 수 변화", labels={'x': '날짜', 'y': '리뷰 수'})
-                    fig.update_traces(mode='lines+markers')
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                elif time_unit == "주별":
+                if time_unit == "주별":
                     time_df['week'] = time_df['review_date'].dt.to_period('W')
                     weekly_counts = time_df.groupby('week').size()
                     fig = px.bar(x=[str(w) for w in weekly_counts.index], y=weekly_counts.values,
@@ -298,7 +326,7 @@ def render_daiso_section():
         else:
             st.warning("review_date 컬럼이 없습니다.")
     
-    # subtab2: 제품별 분석
+# subtab2: 제품별 분석
     with tabs[1]:
         st.subheader("제품별 분석")
         
@@ -313,19 +341,17 @@ def render_daiso_section():
             )
             
             if selected_products and 'review_date' in filtered_df.columns:
-                time_unit = st.radio("시간 단위", ["일별", "주별", "월별"], horizontal=True, key="daiso_product_time")
+                time_unit = st.radio("시간 단위", ["주별", "월별"], horizontal=True, key="daiso_product_time")
                 
                 trend_data = []
                 for product in selected_products:
                     product_data = filtered_df[filtered_df['product_name'] == product].dropna(subset=['review_date'])
                     
                     if not product_data.empty:
-                        if time_unit == "일별":
-                            counts = product_data.groupby(product_data['review_date'].dt.date).size()
-                        elif time_unit == "주별":
+                        if time_unit == "주별":
                             product_data['week'] = product_data['review_date'].dt.to_period('W')
                             counts = product_data.groupby('week').size()
-                        else:
+                        else:  # 월별
                             product_data['month'] = product_data['review_date'].dt.to_period('M')
                             counts = product_data.groupby('month').size()
                         
@@ -434,12 +460,15 @@ def render_daiso_section():
                 
                 st.dataframe(comp_df, use_container_width=True)
     
-    # subtab4: 성과 분석
+# subtab4: 성과 분석
     with tabs[3]:
         st.subheader("성과 분석")
         
         if 'rating' in filtered_df.columns and 'product_name' in filtered_df.columns:
             product_performance = []
+            
+            # 하이라이트할 브랜드 리스트
+            highlight_brands = ['CNP', 'TFS', '코드글로컬러', '케어존']
             
             for product in filtered_df['product_name'].unique():
                 product_data = filtered_df[filtered_df['product_name'] == product]
@@ -453,35 +482,74 @@ def render_daiso_section():
                     category = product_data['category'].iloc[0] if 'category' in product_data.columns else 'Unknown'
                     sort_type = product_data['sort_type'].iloc[0] if 'sort_type' in product_data.columns else 'Unknown'
                     
+                    # 제품명에 하이라이트 브랜드가 포함되어 있는지 확인
+                    is_highlighted = any(brand in product for brand in highlight_brands)
+                    brand_type = '주요 브랜드' if is_highlighted else '기타 브랜드'
+                    
                     product_performance.append({
                         '제품명': product,
                         '평균평점': avg_rating,
                         '리뷰수': review_count,
                         '카테고리': category,
-                        '정렬방식': sort_type
+                        '정렬방식': sort_type,
+                        '브랜드구분': brand_type
                     })
             
             if product_performance:
                 perf_df = pd.DataFrame(product_performance)
                 
+                # 브랜드구분에 따라 색상을 다르게 하여 scatter plot 생성
                 fig = px.scatter(perf_df, x='리뷰수', y='평균평점', 
-                               color='카테고리', size='리뷰수',
-                               hover_data=['제품명', '정렬방식'],
-                               title="제품 성과 분석: 평점 vs 리뷰수")
+                               color='브랜드구분', size='리뷰수',
+                               hover_data=['제품명', '정렬방식', '카테고리'],
+                               title="제품 성과 분석: 평점 vs 리뷰수",
+                               color_discrete_map={
+                                   '주요 브랜드': '#FF6B6B',  # 빨간색 계열
+                                   '기타 브랜드': '#4ECDC4'   # 청록색 계열
+                               })
+                
+                # 범례 위치 조정 및 마커 크기 설정
+                fig.update_layout(
+                    legend=dict(
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="left",
+                        x=0.01
+                    )
+                )
+                
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # 주요 브랜드 제품들의 통계 정보 표시
+                highlighted_products = perf_df[perf_df['브랜드구분'] == '주요 브랜드']
+                if not highlighted_products.empty:
+                    st.markdown("### 주요 브랜드 제품 현황")
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    col1.metric("주요 브랜드 제품 수", f"{len(highlighted_products)}개")
+                    col2.metric("평균 평점", f"{highlighted_products['평균평점'].mean():.2f}")
+                    col3.metric("총 리뷰 수", f"{highlighted_products['리뷰수'].sum():,}개")
+                    col4.metric("평균 리뷰 수", f"{highlighted_products['리뷰수'].mean():.0f}개")
                 
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     st.write("**평점 높은 제품 TOP 10**")
-                    top_rating = perf_df.nlargest(10, '평균평점')[['제품명', '평균평점', '리뷰수', '카테고리']]
-                    st.dataframe(top_rating, use_container_width=True)
+                    top_rating = perf_df.nlargest(10, '평균평점')[['제품명', '평균평점', '리뷰수', '카테고리', '브랜드구분']]
+                    # 주요 브랜드는 굵게 표시
+                    for idx, row in top_rating.iterrows():
+                        if row['브랜드구분'] == '주요 브랜드':
+                            top_rating.loc[idx, '제품명'] = f"**{row['제품명']}**"
+                    st.dataframe(top_rating.drop('브랜드구분', axis=1), use_container_width=True)
                 
                 with col2:
                     st.write("**리뷰 많은 제품 TOP 10**")
-                    top_reviews = perf_df.nlargest(10, '리뷰수')[['제품명', '리뷰수', '평균평점', '카테고리']]
-                    st.dataframe(top_reviews, use_container_width=True)
-
+                    top_reviews = perf_df.nlargest(10, '리뷰수')[['제품명', '리뷰수', '평균평점', '카테고리', '브랜드구분']]
+                    # 주요 브랜드는 굵게 표시
+                    for idx, row in top_reviews.iterrows():
+                        if row['브랜드구분'] == '주요 브랜드':
+                            top_reviews.loc[idx, '제품명'] = f"**{row['제품명']}**"
+                    st.dataframe(top_reviews.drop('브랜드구분', axis=1), use_container_width=True)
     # subtab5: 제품 상세 분석
     with tabs[4]:
         st.subheader("제품 상세 분석")
@@ -771,9 +839,197 @@ def render_daiso_section():
                         st.write(row['review_text'])
         else:
             st.warning("제품명 데이터가 없습니다.")
-
-    # subtab6: 분석 보고서
+    # subtab6: 주요 브랜드 분석 (새로 추가)
     with tabs[5]:
+        st.subheader("주요 브랜드 분석")
+        
+        # 하이라이트할 브랜드 리스트
+        highlight_brands = ['CNP', 'TFS', '코드글로컬러', '케어존']
+        
+        # 주요 브랜드 제품들만 필터링
+        brand_filtered_df = filtered_df[
+            filtered_df['product_name'].str.contains('|'.join(highlight_brands), case=False, na=False)
+        ].copy()
+        
+        if brand_filtered_df.empty:
+            st.warning("현재 필터 조건에서 주요 브랜드 제품이 없습니다.")
+            st.info("필터 설정을 조정해보세요. (카테고리: 전체, 정렬방식: 전체, 기간: 전체)")
+        else:
+            # 브랜드별 통계
+            st.markdown("### 브랜드별 현황")
+            
+            brand_stats = []
+            for brand in highlight_brands:
+                brand_products = brand_filtered_df[
+                    brand_filtered_df['product_name'].str.contains(brand, case=False, na=False)
+                ]
+                
+                if not brand_products.empty:
+                    brand_products['rating_numeric'] = brand_products['rating'].apply(extract_rating)
+                    valid_ratings = brand_products.dropna(subset=['rating_numeric'])
+                    
+                    stats = {
+                        '브랜드': brand,
+                        '제품수': len(brand_products['product_name'].unique()),
+                        '총리뷰수': len(brand_products),
+                        '평균평점': valid_ratings['rating_numeric'].mean() if not valid_ratings.empty else 0,
+                        '평균리뷰길이': brand_products['review_text'].str.len().mean() if 'review_text' in brand_products.columns else 0
+                    }
+                    brand_stats.append(stats)
+            
+            if brand_stats:
+                brand_stats_df = pd.DataFrame(brand_stats)
+                brand_stats_df['평균평점'] = brand_stats_df['평균평점'].round(2)
+                brand_stats_df['평균리뷰길이'] = brand_stats_df['평균리뷰길이'].round(0).astype(int)
+                
+                # 브랜드별 메트릭 표시
+                cols = st.columns(len(brand_stats))
+                for i, (_, row) in enumerate(brand_stats_df.iterrows()):
+                    with cols[i]:
+                        st.metric(
+                            row['브랜드'],
+                            f"{row['제품수']}개 제품",
+                            f"평점 {row['평균평점']}"
+                        )
+                
+                # 브랜드별 상세 통계 테이블
+                st.dataframe(brand_stats_df, use_container_width=True)
+                
+                # 브랜드별 비교 차트
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    fig1 = px.bar(brand_stats_df, x='브랜드', y='총리뷰수',
+                                title="브랜드별 총 리뷰 수", text='총리뷰수')
+                    fig1.update_traces(textposition='outside')
+                    st.plotly_chart(fig1, use_container_width=True)
+                
+                with col2:
+                    fig2 = px.bar(brand_stats_df, x='브랜드', y='평균평점',
+                                title="브랜드별 평균 평점", text='평균평점')
+                    fig2.update_traces(textposition='outside')
+                    fig2.update_layout(yaxis=dict(range=[0, 5]))
+                    st.plotly_chart(fig2, use_container_width=True)
+            
+            # 브랜드별 제품 성과 분석
+            st.markdown("### 브랜드별 제품 성과")
+            
+            if 'rating' in brand_filtered_df.columns:
+                brand_filtered_df['rating_numeric'] = brand_filtered_df['rating'].apply(extract_rating)
+                
+                product_performance = []
+                for product in brand_filtered_df['product_name'].unique():
+                    product_data = brand_filtered_df[brand_filtered_df['product_name'] == product]
+                    valid_ratings = product_data.dropna(subset=['rating_numeric'])
+                    
+                    if not valid_ratings.empty:
+                        # 어떤 브랜드인지 확인
+                        brand_name = '기타'
+                        for brand in highlight_brands:
+                            if brand in product:
+                                brand_name = brand
+                                break
+                        
+                        product_performance.append({
+                            '제품명': product,
+                            '브랜드': brand_name,
+                            '평균평점': valid_ratings['rating_numeric'].mean(),
+                            '리뷰수': len(product_data),
+                            '카테고리': product_data['category'].iloc[0] if 'category' in product_data.columns else 'Unknown'
+                        })
+                
+                if product_performance:
+                    perf_df = pd.DataFrame(product_performance)
+                    
+                    # 브랜드별 색상으로 scatter plot
+                    fig3 = px.scatter(perf_df, x='리뷰수', y='평균평점', 
+                                    color='브랜드', size='리뷰수',
+                                    hover_data=['제품명', '카테고리'],
+                                    title="주요 브랜드 제품 성과 분석")
+                    st.plotly_chart(fig3, use_container_width=True)
+                    
+                    # 브랜드별 TOP 제품
+                    st.markdown("### 브랜드별 최고 성과 제품")
+                    
+                    for brand in highlight_brands:
+                        brand_products = perf_df[perf_df['브랜드'] == brand]
+                        if not brand_products.empty:
+                            top_product = brand_products.loc[brand_products['평균평점'].idxmax()]
+                            
+                            col1, col2, col3, col4 = st.columns(4)
+                            col1.write(f"**{brand}**")
+                            col2.write(f"{top_product['제품명'][:30]}...")
+                            col3.write(f"평점: {top_product['평균평점']:.2f}")
+                            col4.write(f"리뷰: {top_product['리뷰수']}개")
+            
+            # 브랜드별 키워드 분석
+            st.markdown("### 브랜드별 주요 키워드")
+            
+            if 'review_text' in brand_filtered_df.columns:
+                brand_keywords = {}
+                
+                for brand in highlight_brands:
+                    brand_reviews = brand_filtered_df[
+                        brand_filtered_df['product_name'].str.contains(brand, case=False, na=False)
+                    ]
+                    
+                    if not brand_reviews.empty:
+                        keywords = analyze_product_keywords(brand_reviews, "count")
+                        if keywords:
+                            brand_keywords[brand] = keywords[:10]
+                
+                if brand_keywords:
+                    # 브랜드별 키워드를 탭으로 표시
+                    keyword_tabs = st.tabs(list(brand_keywords.keys()))
+                    
+                    for i, (brand, keywords) in enumerate(brand_keywords.items()):
+                        with keyword_tabs[i]:
+                            keywords_df = pd.DataFrame(keywords, columns=['키워드', '빈도'])
+                            
+                            fig = px.bar(keywords_df, x='빈도', y='키워드',
+                                       orientation='h', title=f"{brand} 주요 키워드")
+                            fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                            st.plotly_chart(fig, use_container_width=True)
+            
+            # 브랜드별 시간 트렌드
+            st.markdown("### 브랜드별 시간 트렌드")
+            
+            if 'review_date' in brand_filtered_df.columns:
+                time_df = brand_filtered_df.dropna(subset=['review_date']).copy()
+                
+                if not time_df.empty:
+                    # 각 브랜드별로 월별 리뷰 수 계산
+                    brand_trends = []
+                    
+                    for brand in highlight_brands:
+                        brand_data = time_df[
+                            time_df['product_name'].str.contains(brand, case=False, na=False)
+                        ]
+                        
+                        if not brand_data.empty:
+                            brand_data['month'] = brand_data['review_date'].dt.to_period('M')
+                            monthly_counts = brand_data.groupby('month').size()
+                            
+                            for month, count in monthly_counts.items():
+                                brand_trends.append({
+                                    '월': str(month),
+                                    '브랜드': brand,
+                                    '리뷰수': count
+                                })
+                    
+                    if brand_trends:
+                        trend_df = pd.DataFrame(brand_trends)
+                        
+                        fig4 = px.line(trend_df, x='월', y='리뷰수', color='브랜드',
+                                     title="브랜드별 월별 리뷰 수 트렌드", markers=True)
+                        st.plotly_chart(fig4, use_container_width=True)
+                    else:
+                        st.warning("브랜드별 시간 트렌드 데이터가 없습니다.")
+                else:
+                    st.warning("시간 데이터가 없습니다.")
+
+    # subtab7: 분석 보고서
+    with tabs[6]:
         st.subheader("분석 보고서")
         
         if 'product_name' in filtered_df.columns:
