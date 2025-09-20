@@ -9,8 +9,11 @@ last_updated : 2025.09.14
 #//==============================================================================//#
 # Library import
 #//==============================================================================//#
+from pathlib import Path
 
-
+# 프로젝트 루트 설정
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT = PROJECT_ROOT / "data"
 
 #//==============================================================================//#
 # 채널별 데이터 경로 설정
@@ -18,19 +21,19 @@ last_updated : 2025.09.14
 CHANNEL_CONFIGS = {
     'daiso': {
         'name': '다이소',
-        'raw_data_path': r'C:\Users\lluke\OneDrive\바탕 화면\ReviewFW_LG_hnh\data\data_daiso\raw_data\reviews_daiso',
+        'raw_data_path': str(DATA_ROOT / 'data_daiso' / 'raw_data' / 'reviews_daiso'),
         'file_pattern': '*_reviews.csv',
         'encoding': ['utf-8', 'cp949']
     },
     'coupang': {
         'name': '쿠팡',
-        'raw_data_path': '../data/data_coupang/raw_data/',
+        'raw_data_path': str(DATA_ROOT / 'data_coupang' / 'raw_data' / 'reviews_coupang'),
         'file_pattern': '*_reviews.csv',
         'encoding': ['utf-8', 'cp949']
     },
     'oliveyoung': {
         'name': '올리브영',
-        'raw_data_path': '../data/data_oliveyoung/raw_data/',
+        'raw_data_path': str(DATA_ROOT / 'data_oliveyoung' / 'raw_data' / 'reviews_oliveyoung'),
         'file_pattern': '*_reviews.csv',
         'encoding': ['utf-8', 'cp949']
     }
