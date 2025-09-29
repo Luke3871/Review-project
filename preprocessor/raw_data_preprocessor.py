@@ -76,7 +76,7 @@ class DataPreprocessor:
 
         print(f"✅ 기본 데이터 정리: {original_count} → {len(df)}개")
         return df
-
+    
     # 2. 별점 정리
     def _extract_numeric_rating(self, df):
         """별점 정리"""
@@ -103,6 +103,11 @@ class DataPreprocessor:
                     print(f"DEBUG: 숫자 변환 실패: '{rating_str}'")
                     return np.nan
 
+        # 실제로 rating 컬럼에 함수 적용 (이 부분이 누락되어 있었음)
+        if 'rating' in df.columns:
+            df['rating_numeric'] = df['rating'].apply(extract_rating)
+            print(f"✅ 평점 변환 완료: {df['rating_numeric'].notna().sum()}개 유효 평점")
+        
         return df
 
     # 3. 텍스트 메트릭
@@ -138,6 +143,8 @@ class DataPreprocessor:
         if cleaned_df.empty:
             print("전처리 결과가 비어있어 저장하지 않습니다.")
             return cleaned_df
+
+        cleaned_df = self._add_lg_product_flag(cleaned_df, file_name)
 
         # 프로젝트 루트 기준
         PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -224,3 +231,22 @@ class DataPreprocessor:
                 continue
         
         print(f"{channel_name} 채널 완료: {success_count}개 파일 처리됨")
+
+    def _add_lg_product_flag(self, df, file_name):
+        """LG 생활건강 제품 식별 플래그 추가"""
+        from config_preprocessor import LG_BRANDS
+            
+        # 파일명에서 LG 브랜드 체크
+        filename_lg = any(brand.lower() in file_name.lower() for brand in LG_BRANDS)
+            
+        # 제품명에서 LG 브랜드 체크
+        if 'product_name' in df.columns:
+            product_lg = df['product_name'].str.contains('|'.join(LG_BRANDS), case=False, na=False)
+            df['is_lg_product'] = filename_lg | product_lg
+        else:
+            df['is_lg_product'] = filename_lg
+            
+        lg_count = df['is_lg_product'].sum()
+        print(f"✅ LG 제품 식별: {lg_count}개 LG 제품 발견")
+            
+        return df

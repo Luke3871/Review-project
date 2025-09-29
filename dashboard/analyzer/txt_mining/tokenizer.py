@@ -68,7 +68,7 @@ def my_beauty_korean_tokenizer(text, stopwords):
     """
     keywords = []
     for token in tokens:
-        word = token.form
+        word = token.lemma         # lemma or form 선택? 
         pos = token.tag
         # 품사 필터링
         if pos in ['NNG', 'NNP', 'VA', 'VV']:

@@ -63,3 +63,12 @@ STOPWORDS_PATH = 'analyzer/txt_mining/words_dictionary/stopwords/stopwords_origi
 # 신조어 사전 경로
 #//==============================================================================//#
 NEWWORDS_PATH = "analyzer/txt_mining/words_dictionary/newwords/newwords"
+
+
+#//==============================================================================//#
+# LG 생활건강 브랜드 리스트
+#//==============================================================================//#
+LG_BRANDS = [
+    "CNP", "CNP Laboratory", "더페이스샵", "TFS", "The Face Shop", "코드글로컬러", "Glint", "케어존",
+    "숨37", "SUM37", "오휘", "OHUI", "후", "WHOO", "The History of Whoo",
+]
