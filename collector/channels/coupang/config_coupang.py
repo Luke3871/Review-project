@@ -49,9 +49,9 @@ PRODUCT_INFO = ".ProductUnit_productInfo__1l0il"
 PRODUCT_NAME = ".ProductUnit_productName__gre7e"
 
 # 가격 관련 셀렉터들
-PRODUCT_PRICE_ORIGINAL = ".PriceInfo_basePrice__8BQ32"    # 원래 가격  
-PRODUCT_PRICE_SALE = ".Price_priceValue__A4KOr"          # 할인된 가격
-PRODUCT_DISCOUNT_RATE = ".PriceInfo_discountRate__EsQ8I" # 할인율
+PRODUCT_PRICE_ORIGINAL = "del.PriceInfo_basePrice__8BQ32"    # 원래 가격  
+PRODUCT_PRICE_SALE = "strong.Price_priceValue__A4KOr"          # 할인된 가격
+PRODUCT_DISCOUNT_RATE = "span.PriceInfo_discountRate__EsQ8I" # 할인율
 
 #//==============================================================================//#
 # 4. 카테고리 URL
@@ -105,7 +105,8 @@ PRODUCT_NAME_DETAIL = ".sdp-review__article__list__info__product-info__name"    
 PRODUCT_PRICE_SALE_DETAIL = ".price-amount final-price-amount !twc-leading-[24px]"  # 상세 페이지 할인 가격
 PRODUCT_PRICE_ORIGINAL_DETAIL = ".price-amount original-price-amount"  # 상세 페이지 원래 가격  
 PRODUCT_DISCOUNT_RATE_DETAIL = ".order:0;margin-right:3px;color:#212b36"   # 상세 페이지 할인율, style
-
+PRODUCT_BRAND_DETAIL = "div.twc-text-sm twc-text-blue-600" # 브랜드명
+CATEGORY_USE_BREADCRUMB = "ul.breadcrumb li a" # 중분류
 #//==============================================================================//#
 # 8. 리뷰 관련 셀렉터
 #//==============================================================================//#
@@ -115,6 +116,12 @@ REVIEWER_NAME = ".sdp-review__article__list__info__user__name js_reviewUserProfi
 REVIEW_RATING = ".sdp-review__article__list__info__product-info__star-orange[data-rating]"
 REVIEW_DATE = ".sdp-review__article__list__info__product-info__reg-date"
 REVIEW_TEXT = ".sdp-review__article__list__review__content"
+REVIEW_SELECTED_OPTION = "div.sdp-review__article__list__info__product-info__name"
+REVIEW_HELPFUL_COUNT = ".sdp-review__article__list__help_count strong"
+REVIEW_SURVEY_ROW = ".sdp-review__article__list__survey_row"
+REVIEW_SURVEY_QUESTION = ".sdp-review__article__list__survey_row__question"
+REVIEW_SURVEY_ANSWER = ".sdp-review__article__list__survey_row__answer"
+
 
 #//==============================================================================//#
 # 9. 리뷰 페이지네이션 관련 셀렉터

@@ -4,6 +4,7 @@
 - 제품 목록 자동 수집
 - 수집된 제품의 모든 리뷰 크롤링
 - 제품별 즉시 저장 (다이소 방식)
+- 표준 컬럼명 사용 (RAG 준비)
 
 last_updated : 2025.09.29
 """
@@ -18,12 +19,6 @@ from random import randint
 from driver_coupang import make_driver
 from navigator_coupang import navigate_to_category, collect_product_cards, go_to_page
 from parser_coupang import parse_product_card
-from config_coupang import (
-    PRODUCT_NAME_DETAIL,
-    PRODUCT_PRICE_SALE_DETAIL,
-    PRODUCT_PRICE_ORIGINAL_DETAIL,
-    PRODUCT_DISCOUNT_RATE_DETAIL,
-)
 
 #//==============================================================================//#
 # STEP 1: 제품 목록 수집
@@ -96,7 +91,7 @@ def collect_all_products():
                 filepath = os.path.join(save_dir, filename)
                 
                 df.to_csv(filepath, index=False, encoding='utf-8-sig')
-                print(f"💾 저장: {filename} ({len(products)}개)")
+                print(f"저장: {filename} ({len(products)}개)")
                 
                 all_products.extend(products)
             
@@ -109,109 +104,139 @@ def collect_all_products():
 #//==============================================================================//#
 # STEP 2: 리뷰 수집
 #//==============================================================================//#
-def extract_product_info(driver):
-    """제품 상세 페이지에서 제품 정보 추출"""
-    product_info = {}
-    
-    try:
-        # 제품명
-        try:
-            product_name_elem = driver.find_element(By.CSS_SELECTOR, PRODUCT_NAME_DETAIL)
-            product_info['product_name'] = product_name_elem.text.strip()
-        except:
-            product_info['product_name'] = driver.title
-        
-        # 할인된 가격
-        try:
-            sale_price_elem = driver.find_element(By.CSS_SELECTOR, PRODUCT_PRICE_SALE_DETAIL)
-            product_info['sale_price'] = sale_price_elem.text.strip()
-        except:
-            product_info['sale_price'] = None
-        
-        # 원래 가격
-        try:
-            original_price_elem = driver.find_element(By.CSS_SELECTOR, PRODUCT_PRICE_ORIGINAL_DETAIL)
-            product_info['original_price'] = original_price_elem.text.strip()
-        except:
-            product_info['original_price'] = None
-        
-        # 할인율
-        try:
-            discount_elem = driver.find_element(By.CSS_SELECTOR, PRODUCT_DISCOUNT_RATE_DETAIL)
-            product_info['discount_rate'] = discount_elem.text.strip()
-        except:
-            product_info['discount_rate'] = None
-        
-        return product_info
-        
-    except Exception as e:
-        print(f"제품 정보 추출 오류: {e}")
-        return None
-
-def collect_product_reviews(driver, product_info, max_pages=None):
+def collect_product_reviews(driver, product_info, max_pages_per_product, collection_date):
     """개별 제품의 리뷰 수집 (페이지네이션 포함)"""
     from bs4 import BeautifulSoup
     
     all_reviews = []
     page = 1
     
-    # 제품 상세 정보 추출
-    detailed_info = extract_product_info(driver)
-    if detailed_info:
-        product_info.update(detailed_info)
+    # 제품 상세 페이지에서 추가 정보 추출 (최초 1회만)
+    brand_name = ""
+    category_use = ""
+    
+    try:
+        doc_initial = BeautifulSoup(driver.page_source, "html.parser")
+        
+        # 브랜드명 추출
+        brand_elem = doc_initial.find("div", class_="twc-text-sm twc-text-blue-600")
+        if brand_elem:
+            brand_name = brand_elem.text.strip()
+        
+        # 세부 카테고리 추출 (breadcrumb 마지막 항목)
+        breadcrumb_items = doc_initial.select("ul li a")
+        if breadcrumb_items and len(breadcrumb_items) > 0:
+            category_use = breadcrumb_items[-1].text.strip()
+    except:
+        pass
     
     while True:
         try:
             print(f"  페이지 {page} 처리 중...", end=" ")
-            
+            time.sleep(3)
             # BeautifulSoup 파싱
             doc = BeautifulSoup(driver.page_source, "html.parser")
             
-            # 리뷰 요소 수집
-            reviewer_names = [n.text.strip() if n and n.text.strip() else "익명" 
-                            for n in doc.find_all("span", class_="sdp-review__article__list__info__user__name")]
+            # 리뷰 컨테이너 찾기 (개별 리뷰를 각각 파싱)
+            review_containers = doc.find_all("article", class_="sdp-review__article__list")
             
-            review_stars = []
-            for elem in doc.find_all(attrs={"data-rating": True}):
-                rating = elem.get("data-rating")
-                review_stars.append(rating if rating else "0")
-            
-            review_dates = [d.text.strip() if d and d.text.strip() else "날짜 없음" 
-                          for d in doc.find_all(class_='sdp-review__article__list__info__product-info__reg-date')]
-            
-            review_contents = [r.text.strip() if r and r.text.strip() else None 
-                             for r in doc.find_all(class_='sdp-review__article__list__review__content')]
-            
-            # 리뷰 데이터 구성
-            min_length = min(len(reviewer_names), len(review_stars), 
-                           len(review_dates), len(review_contents))
+            if not review_containers:
+                print("리뷰 없음")
+                break
             
             page_reviews = 0
-            for i in range(min_length):
-                if not review_contents[i]:
-                    continue
+            for idx, container in enumerate(review_containers, 1):
+                try:
+                    # 리뷰어 이름
+                    reviewer_name_elem = container.find("span", class_="sdp-review__article__list__info__user__name")
+                    reviewer_name = reviewer_name_elem.text.strip() if reviewer_name_elem else "익명"
                     
-                review_data = {
-                    'product_url': product_info['url'],
-                    'product_name': product_info.get('product_name', product_info['name']),
-                    'sale_price': product_info.get('sale_price', None),
-                    'original_price': product_info.get('original_price', None),
-                    'discount_rate': product_info.get('discount_rate', None),
-                    'category': product_info['category'],
-                    'sort_type': product_info['sort_type'],
-                    'rank': product_info['rank'],
-                    'reviewer_name': reviewer_names[i] if i < len(reviewer_names) else "익명",
-                    'rating': review_stars[i] if i < len(review_stars) else "0",
-                    'review_date': review_dates[i] if i < len(review_dates) else "날짜 없음",
-                    'review_text': review_contents[i],
-                }
-                all_reviews.append(review_data)
-                page_reviews += 1
+                    # 평점
+                    rating_elem = container.find(attrs={"data-rating": True})
+                    rating = rating_elem.get("data-rating") if rating_elem else "0"
+                    
+                    # 리뷰 날짜
+                    date_elem = container.find(class_='sdp-review__article__list__info__product-info__reg-date')
+                    review_date = date_elem.text.strip() if date_elem else ""
+                    
+                    # 리뷰 내용
+                    content_elem = container.find(class_='sdp-review__article__list__review__content')
+                    review_text = content_elem.text.strip() if content_elem else None
+                    
+                    if not review_text:
+                        continue
+                    
+                    # 도움이 됨 카운트
+                    helpful_count = ""
+                    try:
+                        helpful_div = container.find("div", class_="sdp-review__article__list__help_count")
+                        if helpful_div:
+                            helpful_strong = helpful_div.find("strong")
+                            if helpful_strong:
+                                helpful_count = helpful_strong.text.strip()
+                    except:
+                        pass
+                    
+                    # 선택 옵션 (구매 옵션)
+                    selected_option = ""
+                    try:
+                        option_elem = container.find("div", class_="sdp-review__article__list__info__product-info__name")
+                        if option_elem:
+                            selected_option = option_elem.text.strip()
+                    except:
+                        pass
+                    
+                    # 평가 항목 수집 (향 만족도, 보습력 등)
+                    survey_data = {}
+                    try:
+                        survey_rows = container.find_all("div", class_="sdp-review__article__list__survey_row")
+                        for row in survey_rows:
+                            question_elem = row.find("span", class_="sdp-review__article__list__survey_row__question")
+                            answer_elem = row.find("span", class_="sdp-review__article__list__survey_row__answer")
+                            
+                            if question_elem and answer_elem:
+                                question = question_elem.text.strip()
+                                answer = answer_elem.text.strip()
+                                survey_data[question] = answer
+                    except:
+                        pass
+                    
+                    # review_id 생성 (coupang_제품순위_페이지_리뷰순번)
+                    review_id = f"coupang_{product_info['rank']:03d}_{page:03d}_{idx:03d}"
+                    
+                    # 리뷰 데이터 구성 (표준 컬럼명 사용)
+                    review_data = {
+                        'review_id': review_id,
+                        'captured_at': collection_date,
+                        'channel': 'Coupang',
+                        'product_url': product_info['url'],
+                        'product_name': product_info['name'],
+                        'brand': brand_name,
+                        'category': product_info['category'],
+                        'category_use': category_use,
+                        'product_price_sale': product_info.get('sale_price', ''),
+                        'product_price_origin': product_info.get('original_price', ''),
+                        'sort_type': product_info['sort_type'],
+                        'ranking': product_info['rank'],
+                        'reviewer_name': reviewer_name,
+                        'rating': rating,
+                        'review_date': review_date,
+                        'selected_option': selected_option,
+                        'review_text': review_text,
+                        'helpful_count': helpful_count,
+                        **survey_data
+                    }
+                    
+                    all_reviews.append(review_data)
+                    page_reviews += 1
+                    
+                except Exception as e:
+                    continue
             
             print(f"{page_reviews}개 리뷰")
             
             # 최대 페이지 제한
-            if max_pages and page >= max_pages:
+            if max_pages_per_product and page >= max_pages_per_product:
                 break
             
             # 다음 페이지 이동
@@ -237,7 +262,7 @@ def collect_product_reviews(driver, product_info, max_pages=None):
         
         reviews_df = pd.DataFrame(all_reviews)
         reviews_df.to_csv(filepath, index=False, encoding='utf-8-sig')
-        print(f" 저장: {len(all_reviews)}개 리뷰")
+        print(f"  저장: {len(all_reviews)}개 리뷰")
     
     return all_reviews
 
@@ -248,6 +273,10 @@ def crawl_all_reviews(products, max_pages_per_product=None):
     print("#"*60)
     print(f"총 제품 수: {len(products)}개\n")
     
+    # 수집 시작 시간 기록
+    collection_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"수집 시작 시간: {collection_date}\n")
+    
     driver = make_driver()
     
     try:
@@ -256,18 +285,18 @@ def crawl_all_reviews(products, max_pages_per_product=None):
             
             try:
                 driver.get(product['url'])
-                time.sleep(1)
+                time.sleep(5)
                 
-                reviews = collect_product_reviews(driver, product, max_pages_per_product)
-                print(f" 완료: {len(reviews)}개 리뷰")
+                reviews = collect_product_reviews(driver, product, max_pages_per_product, collection_date)
+                print(f"  완료: {len(reviews)}개 리뷰")
                 
-                time.sleep(randint(1, 2))
+                time.sleep(randint(2, 4))
                 
             except Exception as e:
-                print(f" {e}")
+                print(f"  오류: {e}")
                 continue
         
-        print(f"리뷰 수집 완료!")
+        print(f"\n리뷰 수집 완료!")
         
     except Exception as e:
         print(f"리뷰 수집 중 오류: {e}")
@@ -302,7 +331,7 @@ def main():
     except KeyboardInterrupt:
         print("\n\n사용자에 의해 중단됨")
     except Exception as e:
-        print(f"\n{e}")
+        print(f"\n오류: {e}")
         import traceback
         traceback.print_exc()
 
