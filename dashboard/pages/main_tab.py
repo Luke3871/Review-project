@@ -36,6 +36,12 @@ def main():
     
     if selected_analysis == "대시보드 홈":
         show_analysis_home()
+    elif selected_analysis == "AI 챗봇":
+        try:
+            import pages.ai_chat as ai_chat
+            ai_chat.main()
+        except ImportError as e:
+            st.error(f"AI 챗봇 모듈 로드 실패: {e}")
     elif selected_analysis == "기본 통계량":
         try:
             import pages.basic_stats as basic_stats
@@ -117,7 +123,8 @@ def show_analysis_sidebar():
             "기본 통계량",
             "채널별 비교 분석",
             "리뷰 분석", 
-            "신조어 분석"
+            "신조어 분석",
+            "AI 챗봇"
         ]
         
         if 'selected_analysis' not in st.session_state:
@@ -141,6 +148,8 @@ def show_analysis_sidebar():
             st.info("텍스트 분석 및 벡터라이저를 활용한 리뷰 분석")
         elif selected_analysis == "신조어 분석":
             st.info("리뷰에서 신조어 사용 현황을 분석하고 관리합니다")
+        elif selected_analysis == "AI 챗봇":
+            st.info("자연어로 질문하면 AI가 데이터를 분석합니다")
 
 def show_analysis_home():
     """분석 대시보드 홈"""
