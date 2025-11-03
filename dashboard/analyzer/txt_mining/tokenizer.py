@@ -71,7 +71,7 @@ def my_beauty_korean_tokenizer(text, stopwords):
         word = token.lemma         # lemma or form 선택? 
         pos = token.tag
         # 품사 필터링
-        if pos in ['NNG', 'NNP', 'VA', 'VV']:
+        if pos in ['NNG', 'NNP']:     #'VA', 'VV' 명사만
             # 불용어 제거
             if len(word) >= 1 and word not in stopwords:
                 # 숫자만 있는 리뷰 제거

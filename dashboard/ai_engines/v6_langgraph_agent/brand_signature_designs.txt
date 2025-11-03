@@ -1,0 +1,7 @@
+# Brand Signature Design Elements
+# 브랜드별 시그니처 디자인 요소 정의
+# Format: [brand_name_english_lowercase]
+
+[belif]
+[빌리프]
+signature_cap: Black cap design

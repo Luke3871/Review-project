@@ -94,19 +94,23 @@ def get_stopwords_for_channel(channel: str) -> set[str]:
     - 각 채널별 전용 txt : daiso, oliveyoung, coupang ...
     """
     origin = load_stopwords("stopwords_origin.txt")
+    cosmetic = load_stopwords("stopwords_cosmetic.txt")
     brands = load_stopwords("stopwords_brands.txt")
 
     if channel == "daiso":
         daiso = load_stopwords("stopwords_daiso.txt")
-        return origin.union(brands, daiso)
+        cosmetic = load_stopwords("stopwords_cosmetic.txt")
+        return origin.union(brands, daiso, cosmetic)
 
     elif channel == "oliveyoung":
         olive = load_stopwords("stopwords_oliveyoung.txt")
-        return origin.union(brands, olive)
+        cosmetic = load_stopwords("stopwords_cosmetic.txt")
+        return origin.union(brands, olive, cosmetic)
 
     elif channel == "coupang":
         coupang = load_stopwords("stopwords_coupang.txt")
-        return origin.union(brands, coupang)
+        cosmetic = load_stopwords("stopwords_cosmetic.txt")
+        return origin.union(brands, coupang, cosmetic)
 
     else:
         # 기본값: origin + brands

@@ -77,7 +77,7 @@ def show_login_sidebar():
     # 로고 (중앙 정렬)
     st.markdown('<div style="text-align: center; margin-bottom: 1rem;">', unsafe_allow_html=True)
     try:
-        st.image(r"C:\Users\lluke\OneDrive\바탕 화면\ReviewFW_LG_hnh\dashboard\assets\KOREA UNIV LOGO.png", width=200)
+        st.image(r"C:\ReviewFW_LG_hnh\dashboard\assets\KOREA UNIV LOGO.png", width=200)
     except:
         st.markdown("### 고려대학교")
     st.markdown('</div>', unsafe_allow_html=True)

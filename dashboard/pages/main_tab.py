@@ -1,9 +1,14 @@
+#//==============================================================================//#
 """
+main_tab.py
+
 분석 메인 화면
 - 사이드바에서 분석 메뉴 선택
 - 각 분석 페이지로 라우팅
-"""
 
+last_updated : 2025.10.23
+"""
+#//==============================================================================//#
 import streamlit as st
 import sys
 import os
@@ -36,32 +41,55 @@ def main():
     
     if selected_analysis == "대시보드 홈":
         show_analysis_home()
-    elif selected_analysis == "AI 챗봇":
+    
+    elif selected_analysis == "채널":
+        try:
+            import pages.channel_analysis as channel_analysis
+            channel_analysis.main()
+        except ImportError as e:
+            st.error(f"채널 분석 모듈 로드 실패: {e}")
+    
+    elif selected_analysis == "브랜드":
+        try:
+            import pages.brand_analysis as brand_analysis
+            brand_analysis.main()
+        except ImportError as e:
+            st.error(f"브랜드 분석 모듈 로드 실패: {e}")
+    
+    elif selected_analysis == "제품":
+        try:
+            import pages.product_analysis as product_analysis
+            product_analysis.main()
+        except ImportError as e:
+            st.error(f"제품 분석 모듈 로드 실패: {e}")
+    
+    elif selected_analysis == "LG생활건강":
+        try:
+            import pages.lghnh_analysis as lghh_analysis
+            lghh_analysis.main()
+        except ImportError as e:
+            st.error(f"LG생활건강 분석 모듈 로드 실패: {e}")
+
+    elif selected_analysis == "신조어 분석":
+        try:
+            import pages.newword_analysis as newword_analysis
+            newword_analysis.main()
+        except ImportError as e:
+            st.error(f"신조어 분석 모듈 로드 실패: {e}")
+
+    elif selected_analysis == "AI Chatbot (V6)":
+        try:
+            import pages.ai_chatbot_v6 as ai_chatbot_v6
+            ai_chatbot_v6.main()
+        except ImportError as e:
+            st.error(f"AI Chatbot V6 모듈 로드 실패: {e}")
+
+    elif selected_analysis == "이전 모델 (V1-V5)":
         try:
             import pages.ai_chat as ai_chat
             ai_chat.main()
         except ImportError as e:
-            st.error(f"AI 챗봇 모듈 로드 실패: {e}")
-    elif selected_analysis == "기본 통계량":
-        try:
-            import pages.basic_stats as basic_stats
-            basic_stats.main()
-        except ImportError:
-            st.error("pages/basic_stats.py 모듈을 찾을 수 없습니다.")
-    elif selected_analysis == "리뷰 분석":
-        try:
-            import pages.text_mining.review_analysis as review_analysis
-            review_analysis.main()
-        except ImportError:
-            st.error("pages/review_analysis.py 모듈이 구현되지 않았습니다.")
-            show_coming_soon("리뷰 분석")
-    elif selected_analysis == "신조어 분석":
-        try:
-            import analyzer.newword_analysis as newword_analysis
-            newword_analysis.main()
-        except ImportError:
-            st.error("pages/newword_analysis.py 모듈이 구현되지 않았습니다.")
-            show_coming_soon("신조어 분석")
+            st.error(f"이전 모델 로드 실패: {e}")
 
 def show_analysis_sidebar():
     """분석용 사이드바"""
@@ -75,7 +103,7 @@ def show_analysis_sidebar():
             
             with col1:
                 st.markdown(f"""
-                <div style="color: white; font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; margin-top: 0.2rem;">
+                <div style="color: #262730; font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; margin-top: 0.2rem;">
                     {username}
                 </div>
                 """, unsafe_allow_html=True)
@@ -97,41 +125,28 @@ def show_analysis_sidebar():
             """, unsafe_allow_html=True)
         else:
             st.warning("사용자 정보가 없습니다.")
-        
-        # 분석 히스토리 (상단 이동)
-        st.markdown("**분석 히스토리**")
-        if 'analysis_history' not in st.session_state:
-            st.session_state.analysis_history = []
-        
-        if st.session_state.analysis_history:
-            for i, history in enumerate(st.session_state.analysis_history[-5:]):  # 최근 5개만
-                st.markdown(f"<div style='font-size: 0.8rem; color: #ccc; margin-bottom: 0.2rem;'>• {history}</div>", unsafe_allow_html=True)
-            
-            if st.button("히스토리 삭제", use_container_width=True, key="clear_history"):
-                st.session_state.analysis_history = []
-                st.rerun()
-        else:
-            st.markdown("<div style='font-size: 0.8rem; color: #888;'>분석 히스토리가 없습니다.</div>", unsafe_allow_html=True)
-        
+
         st.markdown("---")
-        
+
         # 분석 메뉴
         st.markdown("### 분석 메뉴")
-        
+
         analysis_options = [
             "대시보드 홈",
-            "기본 통계량",
-            "채널별 비교 분석",
-            "리뷰 분석", 
+            "LG생활건강",
+            "채널",
+            "브랜드",
+            "제품",
             "신조어 분석",
-            "AI 챗봇"
+            "AI Chatbot (V6)",
+            "이전 모델 (V1-V5)"
         ]
         
         if 'selected_analysis' not in st.session_state:
             st.session_state.selected_analysis = "대시보드 홈"
         
         selected_analysis = st.selectbox(
-            "분석 유형을 선택하세요:",
+            "메뉴 선택:",
             analysis_options,
             index=analysis_options.index(st.session_state.selected_analysis),
             key="analysis_menu"
@@ -142,128 +157,98 @@ def show_analysis_sidebar():
             st.rerun()
         
         # 메뉴별 설명
-        if selected_analysis == "기본 통계량":
-            st.info("채널별 기본 통계량 및 현황을 확인합니다")
-        elif selected_analysis == "리뷰 분석":
-            st.info("텍스트 분석 및 벡터라이저를 활용한 리뷰 분석")
-        elif selected_analysis == "신조어 분석":
-            st.info("리뷰에서 신조어 사용 현황을 분석하고 관리합니다")
-        elif selected_analysis == "AI 챗봇":
-            st.info("자연어로 질문하면 AI가 데이터를 분석합니다")
+        descriptions = {
+            "대시보드 홈": "전체 데이터 현황",
+            "LG생활건강": "LG생건 제품 집중 분석",
+            "채널": "채널별 상세 분석",
+            "브랜드": "브랜드별 상세 분석",
+            "제품": "제품별 상세 분석",
+            "신조어 분석": "신조어 검색 및 사전 관리",
+            "AI Chatbot (V6)": "자연어 질의응답",
+            "이전 모델 (V1-V5)": "이전 AI Chatbot 모델"
+        }
+
+        if selected_analysis in descriptions:
+            st.caption(descriptions[selected_analysis])
+
+        # 북마크 UI 추가
+        from utils.analysis_bookmark import show_bookmarks_sidebar
+        show_bookmarks_sidebar()
 
 def show_analysis_home():
-    """분석 대시보드 홈"""
+    """분석 대시보드 홈 - 전체 현황"""
     
-    st.title("리뷰 데이터 분석 Framework")
-    st.markdown("**LG 생활건강 뷰티 제품 리뷰 분석**")
-    
-    # 전체 현황
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("전체 채널", "3개", help="다이소, 올리브영, 쿠팡")
-    with col2:
-        st.metric("분석 가능 데이터", "1개", help="기본 통계량 분석")
+    st.title("뷰티 리뷰 데이터 분석 프레임워크")
+    st.markdown("**현황 대시보드**")
     
     st.markdown("---")
     
-    # 빠른 시작 섹션
-    st.subheader("빠른 시작")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        #### 📊 기본 통계량
-        - 채널별 리뷰 현황 확인
-        - 제품별 분석 및 평점 분포
-        - 시간대별 리뷰 트렌드
-        """)
-        if st.button("기본 통계량 시작", use_container_width=True):
-            st.session_state.selected_analysis = "기본 통계량"
-            st.rerun()
-    
-    with col2:
-        st.markdown("""
-        #### 🔍 리뷰 분석 
-        - 텍스트 감정 분석
-        - 키워드 추출 및 분석
-        - 벡터라이저 기반 분석
-        """)
-        if st.button("리뷰 분석", use_container_width=True):
-            st.session_state.selected_analysis = "리뷰 분석"
-            st.rerun()
-    
-    st.markdown("---")
-    
-    # 최근 활동
-    st.subheader("최근 활동")
-    
-    if st.session_state.get('analysis_history'):
-        recent_activities = st.session_state.analysis_history[-3:]  # 최근 3개
-        for i, activity in enumerate(reversed(recent_activities), 1):
-            st.write(f"{i}. {activity}")
-    else:
-        st.info("아직 분석 활동이 없습니다. 위의 '빠른 시작'에서 분석을 시작해보세요!")
-    
-    # 사용 가이드
-    with st.expander("📖 사용 가이드"):
-        st.markdown("""
-        ### 시작하기
-        1. **사이드바에서 분석 메뉴 선택**: 원하는 분석 유형을 선택하세요
-        2. **채널과 카테고리 선택**: 분석할 데이터 범위를 설정하세요
-        3. **분석 실행**: '분석 실행' 버튼을 클릭하여 결과를 확인하세요
+    # 전체 데이터 현황 표시
+    with st.spinner("데이터 로딩 중..."):
+        from dashboard_config import load_all_data
+        import pandas as pd
         
-        ### 주요 기능
-        - **기본 통계량**: 리뷰 수, 평점, 트렌드 등 기본 현황
-        - **리뷰 분석**: 감정 분석, 키워드 추출 (개발 예정)
-        - **신조어 분석**: 신조어 탐지 및 관리 (개발 예정)
+        df = load_all_data()
         
-        ### 데이터 현황
-        - **다이소**: 제품 리뷰 데이터
-        - **올리브영**: 제품 리뷰 데이터  
-        - **쿠팡**: 제품 리뷰 데이터
-        """)
+        if df.empty:
+            st.error("데이터를 불러올 수 없습니다.")
+            return
+        
+        # 전체 요약
+        st.subheader("📊 데이터 현황")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("총 리뷰", f"{len(df):,}개")
+        with col2:
+            channel_count = df['channel'].nunique() if 'channel' in df.columns else 0
+            st.metric("채널 수", f"{channel_count}개")
+        with col3:
+            brand_count = df['brand'].nunique() if 'brand' in df.columns else 0
+            st.metric("브랜드 수", f"{brand_count:,}개")
+        with col4:
+            product_count = df['product_name'].nunique() if 'product_name' in df.columns else 0
+            st.metric("제품 수", f"{product_count:,}개")
+        
+        st.markdown("---")
+        
+        # 채널별 현황
+        st.subheader("📍 채널별 현황")
+        
+        if 'channel' in df.columns:
+            channel_stats = df.groupby('channel').agg({
+                'review_id': 'count',
+                'brand': 'nunique',
+                'product_name': 'nunique'
+            }).reset_index()
+            
+            channel_stats.columns = ['채널', '리뷰 수', '브랜드 수', '제품 수']
+            channel_stats = channel_stats.sort_values('리뷰 수', ascending=False)
+            
+            st.dataframe(channel_stats, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
 
-def show_coming_soon(feature_name):
-    """개발 예정 기능 안내"""
-    
-    st.title(f"{feature_name} (개발 예정)")
-    
-    st.info(f"{feature_name} 기능은 현재 개발 중입니다.")
-    
-    st.markdown(f"""
-    ### {feature_name} 예정 기능
-    """)
-    
-    if feature_name == "리뷰 분석":
-        st.markdown("""
-        - **감정 분석**: 긍정/부정 리뷰 분류
-        - **키워드 추출**: 주요 키워드 및 토픽 분석
-        - **텍스트 클러스터링**: 유사한 리뷰 그룹화
-        - **벡터라이저 활용**: TF-IDF, Word2Vec 등
-        """)
-    elif feature_name == "신조어 분석":
-        st.markdown("""
-        - **신조어 탐지**: 새로운 단어/표현 발견
-        - **트렌드 분석**: 신조어 사용 빈도 변화
-        - **사용자 정의 사전**: 신조어 사전 관리
-        - **의미 분석**: 신조어의 감정/의도 분석
-        """)
-    
-    st.markdown("---")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("기본 통계량으로 이동", use_container_width=True):
-            st.session_state.selected_analysis = "기본 통계량"
-            st.rerun()
-    
-    with col2:
-        if st.button("홈으로 돌아가기", use_container_width=True):
-            st.session_state.selected_analysis = "대시보드 홈"
-            st.rerun()
+        # 데이터 수집 기간
+        st.subheader("📅 데이터 수집 기간")
+
+        if 'review_date' in df.columns:
+            df_copy = df.copy()
+            df_copy['review_date'] = pd.to_datetime(df_copy['review_date'], errors='coerce')
+            valid_dates = df_copy['review_date'].dropna()
+
+            if not valid_dates.empty:
+                min_date = valid_dates.min()
+                max_date = valid_dates.max()
+                duration = (max_date - min_date).days
+
+                # 한 줄로 표시
+                st.markdown(
+                    f"**최초:** {min_date.strftime('%Y-%m-%d')} | "
+                    f"**최근:** {max_date.strftime('%Y-%m-%d')} | "
+                    f"**기간:** {duration}일"
+                )
+
 
 if __name__ == "__main__":
     main()

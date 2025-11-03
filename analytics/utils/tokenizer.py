@@ -2,9 +2,8 @@
 """
 Customized Tokenizer
 - kiwi 형태소 분석기 사용
-- Konlpy 형태소 분석기 사용
 - TF-IDF / Count parameter 조절하여 사용 하도록 세팅
-- Stopwords 따로 정리
+- Stopwords - soynlp 사용 직접 정의
 
 last_updated : 2025.09.20
 """
@@ -73,10 +72,10 @@ def my_beauty_korean_tokenizer(text, stopwords):
     """
     keywords = []
     for token in tokens:
-        word = token.lemma         # lemma or form 선택? 
+        word = token.lemma         
         pos = token.tag
-        # 품사 필터링
-        if pos in ['NNG', 'NNP', 'VA', 'VV']:
+        # 품사 필터링 'NNP', 'VA', 'VV'
+        if pos in ['NNG']:
             # 불용어 제거
             if len(word) >= 1 and word not in stopwords:
                 # 숫자만 있는 리뷰 제거

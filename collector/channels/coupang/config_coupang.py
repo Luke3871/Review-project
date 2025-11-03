@@ -102,7 +102,7 @@ EXCLUDE_KEYWORDS = [
 #//==============================================================================//#
 # 제품 정보 (상세 페이지)
 PRODUCT_NAME_DETAIL = ".sdp-review__article__list__info__product-info__name"        # 상세 페이지 제품명
-PRODUCT_PRICE_SALE_DETAIL = ".price-amount final-price-amount !twc-leading-[24px]"  # 상세 페이지 할인 가격
+PRODUCT_PRICE_SALE_DETAIL = ".price-amount final-price-amount"  # 상세 페이지 할인 가격
 PRODUCT_PRICE_ORIGINAL_DETAIL = ".price-amount original-price-amount"  # 상세 페이지 원래 가격  
 PRODUCT_DISCOUNT_RATE_DETAIL = ".order:0;margin-right:3px;color:#212b36"   # 상세 페이지 할인율, style
 PRODUCT_BRAND_DETAIL = "div.twc-text-sm twc-text-blue-600" # 브랜드명

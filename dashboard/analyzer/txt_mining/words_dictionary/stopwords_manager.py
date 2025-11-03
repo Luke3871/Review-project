@@ -1,7 +1,7 @@
 """
 불용어 사전 관리 모듈
 - 채널/플랫폼별 불용어 사전 분리
-    - origin -> 모든 플랫폼에 적용되는 기본적인 잡음 제거용 사전
+    - common -> 모든 플랫폼에 적용되는 기본적인 잡음 제거용 사전
     - _channelname -> 각 채널별 사전, 채널마다 특화된 잡음 제거용 사전
     - _brands -> 브랜드명, 화장품 시장 특성과 관련된 잡음 제거용 사전
 
@@ -15,6 +15,7 @@ stopwords_manager.py
     2. 불용어 추가/삭제 (카테고리별)
     3. 수정 로그 기록
     4. 채널별 최종 stopwords 조합 반환
+    5. UI용 카테고리 옵션 제공
 """
 
 import datetime
@@ -64,7 +65,13 @@ def log_action(word: str, action: str, user: str = "default", memo: str = "", fi
 # -------------------------------------------------------------------------
 def add_stopword(category: str, word: str, user="default", memo=""):
     """
-    category: 'origin' | 'brands' | 'daiso' | 'oliveyoung' | 'coupang' 
+    불용어 추가
+
+    Args:
+        category: 'common' | 'brands' | 'products' | 'ingredients' | 'channels' | 'daiso' | 'oliveyoung' | 'coupang'
+        word: 추가할 불용어
+        user: 사용자명
+        memo: 메모
     """
     filename = f"stopwords_{category}.txt"
     stopwords = load_stopwords(filename)
@@ -89,25 +96,78 @@ def remove_stopword(category: str, word: str, user="default", memo=""):
 def get_stopwords_for_channel(channel: str) -> set[str]:
     """
     채널별 최종 stopwords 반환
-    - origin.txt : 모든 채널 공통
-    - brands.txt : 브랜드명 제거
-    - 각 채널별 전용 txt : daiso, oliveyoung, coupang ...
+    - common.txt : 기본 공통 불용어 (구 origin.txt)
+    - brands.txt : 브랜드명
+    - products.txt : 제품명 관련
+    - ingredients.txt : 성분명
+    - channels.txt : 채널명
+    - 각 채널별 전용 txt : daiso, oliveyoung, coupang
     """
-    origin = load_stopwords("stopwords_origin.txt")
-    brands = load_stopwords("stopwords_brands.txt")
+    # 공통 불용어 로드 (backward compatibility: origin.txt도 지원)
+    common = load_stopwords("stopwords_common.txt")
+    if not common:  # common.txt가 없으면 origin.txt 시도
+        common = load_stopwords("stopwords_origin.txt")
 
+    brands = load_stopwords("stopwords_brands.txt")
+    products = load_stopwords("stopwords_products.txt")
+    ingredients = load_stopwords("stopwords_ingredients.txt")
+    channels = load_stopwords("stopwords_channels.txt")
+
+    # 기본 공통 불용어 합집합
+    all_common = common.union(brands, products, ingredients, channels)
+
+    # 채널별 추가 불용어
     if channel == "daiso":
         daiso = load_stopwords("stopwords_daiso.txt")
-        return origin.union(brands, daiso)
+        return all_common.union(daiso)
 
     elif channel == "oliveyoung":
         olive = load_stopwords("stopwords_oliveyoung.txt")
-        return origin.union(brands, olive)
+        return all_common.union(olive)
 
     elif channel == "coupang":
         coupang = load_stopwords("stopwords_coupang.txt")
-        return origin.union(brands, coupang)
+        return all_common.union(coupang)
 
     else:
-        # 기본값: origin + brands
-        return origin.union(brands)
+        # 기본값: 공통 불용어만
+        return all_common
+
+# -------------------------------------------------------------------------
+# UI용 카테고리 옵션
+# -------------------------------------------------------------------------
+def get_category_options(channel: str = None) -> dict[str, str]:
+    """
+    불용어 카테고리 옵션 반환 (UI용)
+
+    Args:
+        channel: 현재 채널명 (daiso, coupang, oliveyoung 등)
+
+    Returns:
+        {카테고리_키: 표시_텍스트} 딕셔너리
+    """
+    # 공통 카테고리
+    options = {
+        "common": "🌐 공통 - 조사, 수량 등 기본 불용어",
+        "brands": "🏷️ 브랜드 - 브랜드명",
+        "products": "📦 제품 관련 - 제품 유형, 색상 등",
+        "ingredients": "🧪 성분 - 성분명 (레티놀, 시카 등)",
+        "channels": "🏪 채널 - 채널명",
+    }
+
+    # 채널별 카테고리 (현재 채널을 맨 앞에 추가)
+    channel_specific = {
+        "daiso": "🛒 다이소 전용",
+        "coupang": "📱 쿠팡 전용",
+        "oliveyoung": "💄 올리브영 전용"
+    }
+
+    if channel and channel.lower() in channel_specific:
+        channel_key = channel.lower()
+        # 현재 채널을 맨 앞에 추가
+        options = {
+            channel_key: f"⭐ {channel_specific[channel_key]} (현재 채널)",
+            **options
+        }
+
+    return options

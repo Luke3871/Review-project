@@ -1,40 +1,90 @@
-# test_basic_stats.py
-import sys
+# test_connection.py
 import os
+import sys
+import locale
 
-# analytics 폴더 고정
-current_file = os.path.abspath(__file__)
-analytics_dir = os.path.dirname(os.path.dirname(current_file))
+# 강제로 UTF-8 설정
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ['PGCLIENTENCODING'] = 'UTF8'
 
-if analytics_dir not in sys.path:
-    sys.path.insert(0, analytics_dir)
-    
-import pandas as pd
+# 작업 디렉토리를 C:\ 로 변경
+os.chdir('C:\\')
+
+# 로케일 변경
+try:
+    locale.setlocale(locale.LC_ALL, 'C')
+except:
+    pass
+
 import psycopg2
-from core.basic_stats import get_basic_statistics, get_channel_statistics, get_brand_statistics
 
-conn = psycopg2.connect(
-    dbname="ragdb",
-    user="postgres",
-    password="postgres",
-    host="localhost",
-    port=5432
-)
+print("Test 1: Basic connect")
+try:
+    conn = psycopg2.connect(
+        host='localhost',
+        port=5432,
+        database='cosmetic_reviews',
+        user='postgres',
+        password='postgres'
+    )
+    print("✅ Basic connect OK")
+    conn.close()
+except Exception as e:
+    print(f"❌ Basic connect FAILED: {e}")
 
-df = pd.read_sql("SELECT * FROM reviews LIMIT 10000", conn)
+print("\nTest 2: With client_encoding keyword")
+try:
+    conn = psycopg2.connect(
+        host='localhost',
+        port=5432,
+        database='cosmetic_reviews',
+        user='postgres',
+        password='postgres',
+        client_encoding='utf8'
+    )
+    print("✅ With client_encoding OK")
+    conn.close()
+except Exception as e:
+    print(f"❌ With client_encoding FAILED: {e}")
 
-# 기본 통계
-stats = get_basic_statistics(df)
-print("=== 기본 통계 ===")
-for key, value in stats.items():
-    print(f"{key}: {value}")
+print("\nTest 3: With DSN string")
+try:
+    dsn = "host=localhost port=5432 dbname=cosmetic_reviews user=postgres password=postgres client_encoding=utf8"
+    conn = psycopg2.connect(dsn)
+    print("✅ DSN string OK")
+    conn.close()
+except Exception as e:
+    print(f"❌ DSN string FAILED: {e}")
 
-# 채널별
-print("\n=== 채널별 통계 ===")
-print(get_channel_statistics(df))
+print("\nTest 4: Dict unpack")
+try:
+    db_config = {
+        'host': 'localhost',
+        'port': 5432,
+        'database': 'cosmetic_reviews',
+        'user': 'postgres',
+        'password': 'postgres'
+    }
+    conn = psycopg2.connect(**db_config)
+    print("✅ Dict unpack OK")
+    conn.close()
+except Exception as e:
+    print(f"❌ Dict unpack FAILED: {e}")
 
-# 브랜드별
-print("\n=== 브랜드별 통계 ===")
-print(get_brand_statistics(df).head(10))
+print("\nTest 5: Dict unpack + client_encoding")
+try:
+    db_config = {
+        'host': 'localhost',
+        'port': 5432,
+        'database': 'cosmetic_reviews',
+        'user': 'postgres',
+        'password': 'postgres'
+    }
+    conn = psycopg2.connect(**db_config, client_encoding='utf8')
+    print("✅ Dict unpack + client_encoding OK")
+    conn.close()
+except Exception as e:
+    print(f"❌ Dict unpack + client_encoding FAILED: {e}")
 
-conn.close()
+print("\n" + "="*60)
+print("Test completed")
