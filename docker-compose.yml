@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  pgvector:
+    image: ankane/pgvector
+    container_name: pgvec
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cosmetic_reviews
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+      # 초기 데이터 복원을 위한 볼륨 (선택사항)
+      # - ./cosmetic_reviews_backup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgvector_data:
+    driver: local

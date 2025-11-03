@@ -2,9 +2,14 @@
 *.csv
 *.xlsx
 *.json
+*.sql
+*.sql.gz
+*.dump
 /logs/
 /output/
 data_daiso/
+*_backup.sql
+*_backup.sql.gz
 
 # 파이썬 캐시
 __pycache__/
