@@ -227,7 +227,7 @@ class ImagePromptGenerator:
             if conditions:
                 query += " AND (" + " AND ".join(conditions) + ")"
 
-            query += " LIMIT 50"  # 상위 50개 리뷰
+            query += " LIMIT 200"  
 
             cur.execute(query)
             results = cur.fetchall()
@@ -250,7 +250,7 @@ class ImagePromptGenerator:
 
         except Exception as e:
             logger.error(f"키워드 추출 오류: {e}", exc_info=True)
-            return ["보습", "진정", "효과"]  # 기본 키워드
+            return None
         finally:
             if 'cur' in locals():
                 cur.close()
@@ -331,7 +331,7 @@ Output in English, focusing on actionable design guidance."""
                     }
                 ],
                 temperature=0.3,
-                max_tokens=150
+                max_tokens=1024
             )
 
             return response.choices[0].message.content.strip()

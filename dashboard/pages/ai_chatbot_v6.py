@@ -372,10 +372,10 @@ def show_visualizations(visualizations: list):
         if figure:
             if viz_type == 'wordcloud':
                 # Matplotlib figure
-                st.pyplot(figure)
+                st.pyplot(figure, use_container_width=False)
             else:
                 # Plotly figure
-                st.plotly_chart(figure, use_container_width=True)
+                st.plotly_chart(figure, use_container_width=False)
 
 
 def show_tables(tables: dict):
@@ -547,7 +547,7 @@ def show_generated_images(generated_images: list):
 
         # 이미지 표시
         if local_path and os.path.exists(local_path):
-            st.image(local_path, caption=f"Daiso 채널 최적화 디자인 #{idx+1}", use_container_width=True)
+            st.image(local_path, caption=f"Daiso 채널 최적화 디자인 #{idx+1}", width=700)
 
             # 상세 정보 (expander)
             with st.expander(f"📝 디자인 #{idx+1} 상세 정보"):

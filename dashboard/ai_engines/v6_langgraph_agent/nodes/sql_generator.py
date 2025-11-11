@@ -224,6 +224,26 @@ preprocessed_reviews 테이블 (5,000건 - GPT 분석 완료 + 원본 데이터)
 7. LIMIT은 샘플 필요 시만 (기본 없음)
 8. 리뷰 원문 샘플 제공 시 review_clean 컬럼 사용
 
+**LIMIT 사용 규칙 (IMPORTANT):**
+
+preprocessed_reviews 테이블은 총 5,000건의 작은 데이터셋입니다.
+쿼리 유형에 따라 다음 규칙을 따르세요:
+
+1. **종합 분석/전체 데이터 필요 시**: LIMIT 없음 또는 LIMIT 200
+   - "제품 종합 분석", "전체 리뷰 분석", "모든 리뷰" 등
+   - 예: SELECT * FROM preprocessed_reviews WHERE brand = '빌리프' (LIMIT 없음)
+
+2. **집계 쿼리 (GROUP BY)**: LIMIT 20-50
+   - 브랜드별/제품별/속성별 집계
+   - 예: SELECT brand, COUNT(*) ... GROUP BY brand LIMIT 30
+
+3. **샘플 리뷰만 필요**: LIMIT 10-20
+   - "샘플 보여줘", "예시 리뷰", "몇 개만"
+   - 예: SELECT review_clean ... LIMIT 10
+
+4. **reviews 테이블 (314,285건)**: 항상 LIMIT 필수
+   - 대용량 데이터이므로 LIMIT 100-1000 사용
+
 **필터링 규칙 (IMPORTANT):**
 
 1. 브랜드명 필터: 정확한 매칭 사용
@@ -367,6 +387,26 @@ ORDER BY CAST(review_date AS DATE) DESC
 LIMIT 10
 ```
 
+예시 6 - 제품 종합 분석 (전체 analysis 포함):
+질문: "빌리프 모이스춰라이징밤 리뷰 종합 분석"
+entities: {{"brands": ["빌리프"], "products": ["모이스춰라이징밤"]}}
+capabilities: {{"data_scope": "preprocessed_reviews", "analysis_depth": "keyword"}}
+→ SQL:
+```sql
+SELECT
+    brand,
+    product_name,
+    channel,
+    rating,
+    review_date,
+    review_clean,
+    analysis
+FROM preprocessed_reviews
+WHERE brand = '빌리프'
+  AND product_name LIKE '%모이스춰라이징밤%'
+ORDER BY CAST(review_date AS DATE) DESC
+LIMIT 100
+```
 **하위 질문:**
 {sub_question['sub_question']}
 

@@ -61,4 +61,6 @@ run_*.py
 # IDE 관련
 .vscode/
 .idea/
-*.npy
+*.npypracrice_3.ipynb
+practice*.ipynb
+practice*.py

@@ -70,7 +70,7 @@ MIN_REVIEW_COUNT = 1
 LLM_CONFIG = {
     "provider": "openai",
     "model": "gpt-4o-mini",
-    "max_tokens": 4096,
+    "max_tokens": 16384,  # 4096 → 16384 (gpt-4o-mini 최대 출력)
 
     # 노드별 temperature 설정
     "temperature": {

@@ -212,7 +212,7 @@ class EntityParser:
             history_lines = []
             for msg in recent_history:
                 role = "사용자" if msg["role"] == "user" else "AI"
-                content = msg["content"][:200]  # 200자로 제한
+                content = msg["content"][:500]  # 500자로 제한 (200 → 500)
                 history_lines.append(f"{role}: {content}")
             history_context = "\n**이전 대화 맥락:**\n" + "\n".join(history_lines) + "\n\n"
 
@@ -394,25 +394,18 @@ class EntityParser:
         Returns:
             검증 결과 {"valid": bool, "error": str}
         """
-        # 의미있는 질문인지 확인 (너무 빈약한 질문만 걸러냄)
+        # 의미있는 질문인지 확인
         has_meaningful_query = any([
             entities.get("brands"),
             entities.get("products"),
             entities.get("channels"),
-            len(entities.get("attributes", [])) > 0  # 속성만 있어도 OK
+            len(entities.get("attributes", [])) > 0
         ])
 
-        # 속성에 분석 관련 키워드 있으면 통과
-        has_analysis_intent = False
-        for attr in entities.get("attributes", []):
-            if any(keyword in attr for keyword in ANALYSIS_KEYWORDS):
-                has_analysis_intent = True
-                break
-
-        if not has_meaningful_query and not has_analysis_intent:
+        if not has_meaningful_query:
             return {
                 "valid": False,
-                "error": "분석할 대상을 찾을 수 없습니다. 브랜드, 제품, 속성 중 하나를 명시해주세요."
+                "error": "분석할 대상을 찾을 수 없습니다. 브랜드, 제품, 속성을 명시해주세요."
             }
 
         return {"valid": True}
