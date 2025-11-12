@@ -12,8 +12,9 @@ import glob
 from pathlib import Path
 import streamlit as st
 
-# 이미지 경로 설정
-IMAGE_BASE_DIR = Path(r"C:\ReviewFW_LG_hnh\data")
+# 이미지 경로 설정 (상대 경로 사용)
+# dashboard 폴더 기준으로 상위 폴더의 data 디렉토리
+IMAGE_BASE_DIR = Path(__file__).parent.parent.parent / "data"
 
 IMAGE_PATHS = {
     'Daiso': IMAGE_BASE_DIR / "data_daiso" / "raw_data" / "products_image_daiso",

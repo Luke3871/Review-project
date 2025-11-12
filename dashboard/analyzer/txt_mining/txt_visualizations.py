@@ -35,17 +35,33 @@ def create_keyword_wordcloud(keyword_df, title="키워드 워드클라우드"):
         # TF-IDF 점수를 딕셔너리로 변환
         word_freq = dict(zip(keyword_df['키워드'], keyword_df['TF-IDF점수']))
 
-        # 한글 폰트 경로 찾기
+        # 한글 폰트 경로 찾기 (크로스 플랫폼 지원)
+        import os
+        import platform
+
         font_path = None
-        font_candidates = [
-            'C:/Windows/Fonts/malgun.ttf',
-            'C:/Windows/Fonts/malgunbd.ttf',
-            'C:/Windows/Fonts/NanumGothic.ttf',
-            '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
-        ]
+        system = platform.system()
+
+        if system == 'Windows':
+            font_candidates = [
+                'C:/Windows/Fonts/malgun.ttf',
+                'C:/Windows/Fonts/malgunbd.ttf',
+                'C:/Windows/Fonts/NanumGothic.ttf',
+            ]
+        elif system == 'Darwin':  # macOS
+            font_candidates = [
+                '/System/Library/Fonts/AppleGothic.ttf',
+                '/Library/Fonts/AppleGothic.ttf',
+                '/System/Library/Fonts/Supplemental/AppleGothic.ttf',
+            ]
+        else:  # Linux
+            font_candidates = [
+                '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
+                '/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf',
+                '/usr/share/fonts/nanum/NanumGothic.ttf',
+            ]
 
         for font in font_candidates:
-            import os
             if os.path.exists(font):
                 font_path = font
                 break

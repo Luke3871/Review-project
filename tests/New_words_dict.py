@@ -8,7 +8,7 @@
 # # ======================
 # # 0) 설정
 # # ======================
-# CSV_PATH = r"C:\Users\lluke\OneDrive\바탕 화면\20개만\merged_all.csv"  
+# CSV_PATH = r"./data/merged_all.csv"  # 상대 경로로 변경  
 # OUT_DIR  = r"./outputs"; os.makedirs(OUT_DIR, exist_ok=True)
 
 # RECENT_DAYS    = 90
@@ -125,7 +125,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 # ================= 설정 =================
-CSV_PATH   = r"C:\Users\lluke\OneDrive\바탕 화면\20개만\merged_all.csv"      # 데이터 경로
+CSV_PATH   = r"./data/merged_all.csv"      # 데이터 경로 (상대 경로로 변경)
 OUT_DIR    = r"./outputs"; os.makedirs(OUT_DIR, exist_ok=True)
 MODEL_NAME = "gpt-4o-mini"
 CHUNK_SIZE = 400        # 한 번에 보낼 문장 수 (200~500 권장)

@@ -135,8 +135,8 @@ class ProgressTracker:
                 else:
                     lines.append(f"{icon} {desc}")
             elif status == "error":
-                lines.append(f"❌ {desc} - 오류 발생")
-                lines.append(f"   {step['error']}")
+                lines.append(f" {desc} - 오류 발생")
+                lines.append(f" {step['error']}")
                 if step.get("suggestion"):
                     lines.append(f"   💡 {step['suggestion']}")
 

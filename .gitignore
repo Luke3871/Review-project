@@ -17,7 +17,12 @@ __pycache__/
 
 # 환경파일
 .env
+.env.*
+!.env.example
 dashboard/.streamlit/secrets.toml
+!dashboard/.streamlit/secrets.toml.example
+dashboard/.env
+!dashboard/.env.example
 
 # 생성된 이미지
 dashboard/generated_images/

@@ -5,6 +5,8 @@
 """
 
 import streamlit as st
+import os
+from pathlib import Path
 
 # 페이지 설정
 st.set_page_config(
@@ -28,12 +30,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 로그인 사용자 정보
-USERS = {
-    "admin": "123",
-    "임현석": "1234",
-    "박지연": "1234"
-}
+# 로그인 사용자 정보 (환경변수 우선, 없으면 기본값)
+def _load_users():
+    """환경변수에서 사용자 정보 로드"""
+    users_env = os.getenv('DASHBOARD_USERS', '')
+    if users_env:
+        users = {}
+        for user_pair in users_env.split(','):
+            if ':' in user_pair:
+                username, password = user_pair.split(':', 1)
+                users[username.strip()] = password.strip()
+        return users
+    # 기본값
+    return {
+        "admin": "123",
+        "임현석": "1234",
+        "박지연": "1234"
+    }
+
+USERS = _load_users()
 
 def main():
     """메인 함수 - 로그인 처리만"""
@@ -77,7 +92,9 @@ def show_login_sidebar():
     # 로고 (중앙 정렬)
     st.markdown('<div style="text-align: center; margin-bottom: 1rem;">', unsafe_allow_html=True)
     try:
-        st.image(r"C:\ReviewFW_LG_hnh\dashboard\assets\KOREA UNIV LOGO.png", width=200)
+        # 상대 경로로 이미지 로드
+        logo_path = Path(__file__).parent / "assets" / "KOREA UNIV LOGO.png"
+        st.image(str(logo_path), width=200)
     except:
         st.markdown("### 고려대학교")
     st.markdown('</div>', unsafe_allow_html=True)

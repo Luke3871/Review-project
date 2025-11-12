@@ -42,11 +42,11 @@ from dashboard_config import (
 #//==============================================================================//#
 
 DB_CONFIG = {
-    "dbname": "cosmetic_reviews",
-    "user": "postgres",
-    "password": "postgres",
-    "host": "localhost",
-    "port": 5432
+    "dbname": os.getenv('DB_NAME', 'cosmetic_reviews'),
+    "user": os.getenv('DB_USER', 'postgres'),
+    "password": os.getenv('DB_PASSWORD', 'postgres'),
+    "host": os.getenv('DB_HOST', 'localhost'),
+    "port": int(os.getenv('DB_PORT', 5432))
 }
 
 #//==============================================================================//#

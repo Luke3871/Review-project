@@ -853,13 +853,30 @@ class OutputGenerator:
         else:
             word_freq = dict(zip(df[text_col], [1] * len(df)))
 
-        # 한글 폰트 경로 찾기
+        # 한글 폰트 경로 찾기 (크로스 플랫폼 지원)
+        import platform
+
         font_path = None
-        font_candidates = [
-            'C:/Windows/Fonts/malgun.ttf',
-            'C:/Windows/Fonts/malgunbd.ttf',
-            'C:/Windows/Fonts/NanumGothic.ttf',
-        ]
+        system = platform.system()
+
+        if system == 'Windows':
+            font_candidates = [
+                'C:/Windows/Fonts/malgun.ttf',
+                'C:/Windows/Fonts/malgunbd.ttf',
+                'C:/Windows/Fonts/NanumGothic.ttf',
+            ]
+        elif system == 'Darwin':  # macOS
+            font_candidates = [
+                '/System/Library/Fonts/AppleGothic.ttf',
+                '/Library/Fonts/AppleGothic.ttf',
+                '/System/Library/Fonts/Supplemental/AppleGothic.ttf',
+            ]
+        else:  # Linux
+            font_candidates = [
+                '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
+                '/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf',
+                '/usr/share/fonts/nanum/NanumGothic.ttf',
+            ]
 
         for font in font_candidates:
             if os.path.exists(font):

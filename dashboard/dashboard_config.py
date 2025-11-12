@@ -14,17 +14,30 @@ import psycopg2
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# 기본 경로 설정
-BASE_DIR = Path(r"C:\ReviewFW_LG_hnh\dashboard")
-ASSETS_DIR = BASE_DIR / "assets" 
+# 기본 경로 설정 (상대 경로 사용)
+BASE_DIR = Path(__file__).parent.resolve()
+ASSETS_DIR = BASE_DIR / "assets"
 HISTORY_DIR = BASE_DIR / "user_histories"
 
-# 로그인 정보
-USERS = {
-    "admin": "123",
-    "임현석": "1234",
-    "박지연": "1234"
-}
+# 로그인 정보 (환경변수 우선, 없으면 기본값)
+def _load_users():
+    """환경변수에서 사용자 정보 로드"""
+    users_env = os.getenv('DASHBOARD_USERS', '')
+    if users_env:
+        users = {}
+        for user_pair in users_env.split(','):
+            if ':' in user_pair:
+                username, password = user_pair.split(':', 1)
+                users[username.strip()] = password.strip()
+        return users
+    # 기본값
+    return {
+        "admin": "123",
+        "임현석": "1234",
+        "박지연": "1234"
+    }
+
+USERS = _load_users()
 
 PERIOD_OPTIONS = [
     "전체",
@@ -39,13 +52,13 @@ for dir_path in [ASSETS_DIR, HISTORY_DIR]:
     dir_path.mkdir(exist_ok=True)
 
 
-# PostgreSQL 연결
+# PostgreSQL 연결 (환경변수 우선, 없으면 기본값)
 DB_CONFIG = {
-    'dbname': 'cosmetic_reviews',
-    'user': 'postgres',
-    'password': 'postgres',
-    'host': 'localhost',
-    'port': 5432
+    'dbname': os.getenv('DB_NAME', 'cosmetic_reviews'),
+    'user': os.getenv('DB_USER', 'postgres'),
+    'password': os.getenv('DB_PASSWORD', 'postgres'),
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', 5432))
 }
 
 # LG생활건강 브랜드 리스트

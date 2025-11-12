@@ -49,13 +49,13 @@ def setup_logging():
 
     return logger
 
-# 1. 데이터베이스 설정
+# 1. 데이터베이스 설정 (환경변수 우선, 없으면 기본값)
 DB_CONFIG = {
-    'dbname': 'cosmetic_reviews',
-    'user': 'postgres',
-    'password': 'postgres',
-    'host': 'localhost',
-    'port': 5432
+    'dbname': os.getenv('DB_NAME', 'cosmetic_reviews'),
+    'user': os.getenv('DB_USER', 'postgres'),
+    'password': os.getenv('DB_PASSWORD', 'postgres'),
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', 5432))
 }
 
 # 테이블명
