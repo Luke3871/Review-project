@@ -141,164 +141,361 @@ ReviewFW_LG_hnh/
 
 ### V1: Rule-based Analysis
 
-**개요**: 통계 기반 규칙으로 리뷰 분석 및 인사이트 생성
+**개요**: 통계 기반 리뷰 분석 엔진
 
-**데이터 소스**:
-- `preprocessed_reviews` 테이블 사용
-- 컬럼: `rating`, `pros_cons`, `attributes`, `emotions` 등
+**데이터 입력**:
+- Pandas DataFrame (메모리 내 처리, DB 접근 없음)
+- 필요 컬럼: `product_name`, `brand`, `channel`, `rating`, `review_text`, `review_date`
 
-**작동 방식**:
-1. DB에서 제품별 리뷰 데이터 집계
-2. 규칙 기반 통계 계산 (평균 평점, 속성별 만족도)
-3. 임계값 기반 인사이트 생성 (예: 평점 4.0 이상 → "높은 만족도")
-4. 템플릿 기반 리포트 출력
+**분석 기능**:
+1. **만족도 분석**: 평점 분포, 긍정/부정 비율 계산
+2. **키워드 추출**: TF-IDF 기반, 평점별 분리 (긍정 4+, 부정 3-)
+3. **시간 트렌드**: 월별 리뷰 수 추이 분석
+4. **인사이트 생성**: 임계값 기반 규칙 (예: 평점 4.0+ → "높은 만족도")
 
-**특징**: 빠르고 안정적이나 맥락 이해 제한적
+**LLM 사용**: 없음
+
+**특징**: 빠른 속도, 비용 없음, 통계 중심
 
 ---
 
 ### V2: LLM Report Generation
 
-**개요**: GPT를 활용한 비즈니스 인사이트 생성
+**개요**: GPT를 활용한 비즈니스 인사이트 생성 엔진
 
-**데이터 소스**:
-- `preprocessed_reviews` 테이블 직접 조회
-- 또는 V1 분석 결과를 입력으로 사용
+**데이터 입력**:
+- Pandas DataFrame (V1과 동일)
+- 필요 컬럼: `product_name`, `brand`, `channel`, `rating`, `review_text`, `review_date`
 
-**작동 방식**:
-- **V2-A (데이터 직접 분석)**:
-  1. SQL로 리뷰 데이터 추출
-  2. 데이터를 LLM 프롬프트에 삽입
-  3. GPT가 비즈니스 인사이트 생성
+**분석 방식**:
 
-- **V2-B (키워드 해석)**:
-  1. V1 결과 (키워드, 통계)를 LLM에 전달
-  2. LLM이 마케팅 관점에서 해석 및 전략 제안
+**V2-A (데이터 직접 분석)**:
+1. 통계 요약 생성: 리뷰 수, 평균 평점, 평점 분포, 긍정/부정 비율, 월별 트렌드, 주요 키워드
+2. OpenAI API 호출 (GPT-4o-mini, temperature=0.7)
+3. 프롬프트: "제품 강점, 만족도 패턴, 개선 기회, 시장 포지셔닝 분석"
+4. 비즈니스 인사이트 보고서 생성 (max_tokens=2000)
 
-**특징**: 자연스러운 분석 보고서, 맥락 이해 향상
+**V2-B (키워드 해석)**:
+1. V1에서 추출한 상위 20개 키워드 입력
+2. OpenAI API 호출 (GPT-4o-mini, temperature=0.7)
+3. 프롬프트: "키워드 패턴 분석, 제품 개선 방향, 마케팅 전략, 우선순위 액션"
+4. 마케팅 전략 보고서 생성
+
+**LLM 사용**:
+- Model: GPT-4o-mini
+- System Prompt: "화장품 리뷰 데이터 분석 전문가"
+- Temperature: 0.7 (창의적 해석)
+
+**특징**: 자연스러운 문장, 마케팅 관점 해석, V1 대비 깊이 있는 분석
+
+**V1과의 차이**: 규칙 → LLM 기반, 통계 → 비즈니스 인사이트
 
 ---
 
 ### V3: Multi-Agent System
 
-**개요**: 3개의 전문 에이전트가 협력하여 분석 수행
+**개요**: 벡터 검색 기반 3-Agent 협업 시스템
 
 **데이터 소스**:
-- `preprocessed_reviews` 테이블
-- pgvector 확장으로 벡터 임베딩 검색
+- `reviews` 테이블 (PostgreSQL + pgvector)
+- 필드: `review_id`, `product_name`, `brand`, `channel`, `category`, `rating`, `review_text`, `review_date`, `reviewer_skin_features`, `selected_option`, `embedding` (vector 1024차원)
 
-**구조**:
-1. **PlanningAgent**: 사용자 질문을 분석하고 실행 계획 수립
-2. **ExecutionAgent**: 계획에 따라 DB 쿼리 및 벡터 검색 실행
-3. **ResponseAgent**: 결과를 종합하여 최종 응답 생성
+**3-Agent 구조**:
 
-**작동 방식**:
-- 벡터 검색으로 의미적으로 유사한 리뷰 탐색
-- SQL과 벡터 검색 결과를 결합하여 분석
-- 에이전트 간 메시지 전달로 협업
+**1. PlanningAgent**:
+- 사용자 질문 분석
+- 실행 계획 수립 (JSON 형식)
+- LLM: GPT-4o-mini (temperature=0.1)
+- 출력: `{"steps": [...], "answerable": true/false}`
 
-**특징**: 복잡한 질문 처리 가능, 벡터 검색 활용
+**2. ExecutionAgent**:
+- BGE-M3 모델로 질문 임베딩 생성 (1024차원)
+- pgvector 코사인 유사도 검색 실행
+- 필터 적용: brand, channel, category, min_rating, date_range, skin_features
+- SQL: `SELECT * FROM reviews WHERE 1 - (embedding <=> query_vector) > threshold ORDER BY similarity LIMIT top_k`
+
+**3. ResponseAgent**:
+- 검색 결과 분석
+- GPT-4o-mini로 최종 답변 생성 (마크다운)
+
+**임베딩 모델**:
+- BAAI/bge-m3 (로컬 실행)
+- 1024차원 벡터
+- 한글/영문 지원
+
+**작동 흐름**:
+```
+질문 → PlanningAgent (계획) → ExecutionAgent (벡터 검색) → ResponseAgent (답변 생성)
+```
+
+**특징**: 의미 기반 검색, 대량 데이터 효율적 필터링
+
+**V2와의 차이**: DataFrame → DB 벡터 검색, 단일 LLM → 3-Agent 협업
 
 ---
 
 ### V4: ReAct Agent
 
-**개요**: 계층적 검색과 Map-Reduce 패턴으로 고품질 인사이트 생성
+**개요**: ReAct 패턴 + 4단계 계층적 검색 + Map-Reduce 요약
 
 **데이터 소스**:
-- `preprocessed_reviews` 테이블
-- Vector/BM25/Hybrid 검색 지원
+- `reviews` 테이블 (PostgreSQL + pgvector)
 
-**핵심 컴포넌트**:
-- **QueryHandler**: LLM으로 자연어 쿼리 파싱
-- **HierarchicalRetrieval**: 3단계 검색 전략
-  1. 키워드 기반 필터링
-  2. 벡터 유사도 검색
-  3. BM25 키워드 매칭
-- **Map-Reduce**: 개별 리뷰 분석 후 통합 요약
+**ReAct 패턴 (Reason + Act + Observation)**:
 
-**작동 방식**:
-1. 사용자 질문 분석 (ReAct 패턴)
-2. 검색 도구 선택 및 실행
-3. Map: 각 리뷰에서 인사이트 추출
-4. Reduce: 전체 인사이트 통합 및 요약
+**THOUGHT 1: 질문 분석**
+- QueryHandler: LLM으로 질문 파싱 (GPT-4o-mini, temperature=0.1)
+- 추출: brands, keywords, channels, query_type (general/aspect/comparison 등)
 
-**특징**: 정확도 향상, 대량 리뷰 효율적 처리
+**THOUGHT 2: 전략 선택**
+- Playbook: 질문 타입에 따른 검색 전략 결정
+
+**ACTION: 4단계 계층적 검색**
+
+1. **Stage 1 - Vector 검색** (넓게):
+   - BGE-M3 임베딩 생성
+   - pgvector 검색: 최대 10,000건 추출
+
+2. **Stage 2 - BM25 재정렬** (중간):
+   - rank-bm25 라이브러리 사용
+   - 키워드 매칭 점수 계산
+   - 상위 1,000건 선택
+
+3. **Stage 3 - Hybrid 최종선별** (좁게):
+   - Hybrid Score = 0.7 × Vector Score + 0.3 × BM25 Score
+   - 상위 200건 최종 선택
+
+4. **Stage 4 - Map-Reduce 요약**:
+   - Map: 200건을 20건씩 10개 청크로 분할 → 각 청크 요약 (GPT-4o-mini)
+   - Reduce: 10개 요약을 최종 통합 (GPT-4o-mini)
+
+**OBSERVATION: 결과 반환**
+- 최종 요약 (2000 tokens)
+
+**작동 흐름**:
+```
+질문 → QueryHandler (파싱) → Vector (10K) → BM25 (1K) → Hybrid (200) → Map-Reduce (요약)
+```
+
+**LLM 사용**:
+- Query 파싱: GPT-4o-mini (temp=0.1)
+- Map 요약: GPT-4o-mini (temp=0.3, max_tokens=800)
+- Reduce 통합: GPT-4o-mini (temp=0.3, max_tokens=2000)
+
+**특징**: 고정확도, 대량 데이터 효율 처리, 단계별 필터링
+
+**V3와의 차이**: 단일 검색 → 4단계 계층적, 직접 요약 → Map-Reduce
 
 ---
 
 ### V5: LangGraph Basic
 
-**개요**: LangGraph 프레임워크 기반 5개 노드 워크플로우
+**개요**: LangGraph 기반 5-Node 순차 워크플로우 + 14개 Tool
 
 **데이터 소스**:
-- `preprocessed_reviews` 테이블 전용 SQL 쿼리
+- `preprocessed_reviews` 테이블 (PostgreSQL)
 
-**노드 구조**:
-1. **Parser**: 사용자 질문에서 브랜드/제품/채널/의도 추출
-2. **Validation**: 데이터 존재 여부 검증
-3. **Router**: 의도에 따라 14개 분석 도구 선택
-4. **Executor**: 선택된 도구로 DB 쿼리 실행
-5. **Synthesizer**: LLM으로 최종 응답 생성
+**5개 노드 (순차 실행)**:
 
-**14개 분석 도구**:
-- AttributeTool, SentimentTool, KeywordTool
-- ProductComparisonTool, PromotionMentionTool
-- ProsTool, ConsTool, ComplaintTool
-- PurchaseMotivationTool 등
+**1. ParserNode**:
+- LLM으로 질문 파싱 (GPT-4o-mini, temp=0.1)
+- 추출: `{"brands": [...], "products": [...], "channels": [...], "intent": "attribute_analysis"}`
+- 13가지 의도: attribute_analysis, sentiment_analysis, comparison, keyword_extraction, promotion_analysis, positioning_analysis, full_review, keyword_sentiment, pros_analysis, cons_analysis, complaint_analysis, motivation_analysis, comparison_mention
 
-**작동 방식**:
+**2. ValidationNode**:
+- DB 데이터 존재 확인
+- SQL: `SELECT COUNT(*) FROM preprocessed_reviews WHERE brand IN (...) AND product_name IN (...)`
+- 최소 리뷰 수 (MIN_REVIEW_COUNT=1) 체크
+- 결과: `{"count": N, "sufficient": true/false}`
+
+**3. RouterNode**:
+- 의도 → Tool 매핑 (config.py의 INTENT_TO_TOOLS)
+- 예: "attribute_analysis" → ["AttributeTool"]
+- 예: "full_review" → ["AttributeTool", "SentimentTool", "ProsTool", "ConsTool", "PurchaseMotivationTool"]
+
+**4. ExecutorNode**:
+- 선택된 각 Tool 순차 실행
+- 각 Tool은 preprocessed_reviews에서 SQL 쿼리 실행
+- Tool 결과: `{"AttributeTool": {"status": "success", "data": {...}}, ...}`
+
+**5. SynthesizerNode**:
+- Tool 결과들을 종합
+- GPT-4o로 최종 답변 생성 (temp=0.7)
+- 마크다운 형식 출력
+
+**14개 분석 Tool**:
+1. AttributeTool: 속성별 만족도 (보습력, 발림성, 향, 가격 등)
+2. SentimentTool: 긍정/부정 감성 분석
+3. KeywordTool: 주요 키워드 추출
+4. PositioningTool: 제품 포지셔닝 분석
+5. ProductComparisonTool: 제품 비교
+6. PromotionMentionTool: 기획/프로모션 언급
+7. PromotionAnalysisTool: 기획 타입별 반응
+8. ComparisonMentionTool: 타제품 언급 분석
+9. KeywordSentimentTool: 키워드-감성 연계
+10. ProsTool: 장점 분석
+11. ConsTool: 단점 분석
+12. ComplaintTool: 불만사항 분석
+13. PurchaseMotivationTool: 구매동기 분석
+14. ChannelCategoryTool: 채널별 카테고리 반응
+
+**작동 흐름**:
 ```
-START → Parser → Validation → Router → Executor → Synthesizer → END
+질문 → Parser (의도 파악) → Validation (데이터 확인) → Router (Tool 선택) → Executor (Tool 실행) → Synthesizer (답변 생성)
 ```
 
-**특징**: 모듈화된 구조, 의도 기반 분석 도구 자동 선택
+**LLM 사용**:
+- Parser: GPT-4o-mini (temp=0.1)
+- Synthesizer: GPT-4o (temp=0.7)
+
+**특징**: 모듈화된 Tool, 의도 기반 자동 선택, 선형 워크플로우
+
+**V4와의 차이**: 검색 기반 → 구조화된 DB 쿼리, ReAct → LangGraph, Map-Reduce → Tool 조합
 
 ---
 
 ### V6: LangGraph Advanced (현재 메인 엔진)
 
-**개요**: Text-to-SQL + 이미지 생성 통합 멀티모달 분석 시스템
+**개요**: LangGraph 기반 12-Node 조건부 라우팅 워크플로우 + Text-to-SQL + 이미지 생성
 
-**데이터 소스**:
-- `reviews` 테이블 (원본 리뷰 텍스트)
-- `preprocessed_reviews` 테이블 (전처리된 분석 데이터)
-- 두 테이블을 조인하여 활용
+**데이터 입력**:
+- `preprocessed_reviews` 테이블 (5,000건 - GPT-4o-mini 분석 완료)
+  - 컬럼: `brand`, `product_name`, `channel`, `rating`, `review_date`, `review_clean`, `analysis` (JSONB)
+  - JSONB analysis 구조: `제품특성` (보습력, 발림성 등), `감정요약`, `장점`, `단점`, `구매동기`, `키워드`
+- `reviews` 테이블 (314,285건 - 원본 리뷰)
 
-**12개 노드 워크플로우**:
+**12개 노드 구성 (조건부 분기)**:
 
-**[SQL 분석 경로]**
-1. **EntityParser**: 브랜드/제품/채널 엔티티 추출
-2. **CapabilityDetector**: 시스템 처리 가능 여부 판단
-3. **ComplexityClassifier**: 질문 복잡도 분류 (단순/복잡)
-4. **QuestionDecomposer**: 복잡한 질문을 하위 질문으로 분해
-5. **SQLGenerator**: 자연어 → SQL 쿼리 자동 생성
-6. **Executor**: SQL 실행 및 결과 반환
-7. **SQLRefiner**: 결과 부족 시 쿼리 개선
-8. **ResponsePlanner**: 응답 구조 계획 (차트/텍스트)
-9. **OutputGenerator**: 시각화 및 데이터 포맷팅
-10. **Synthesizer**: 최종 마크다운 응답 생성
+**[시작] EntityParser** (GPT-4o-mini, temp=0.0)
+- 사용자 질문에서 브랜드/제품/속성/기간/채널 추출
+- 대화 히스토리 맥락 반영 (최근 6개 메시지)
+- 576개 브랜드 표준명 매핑 (`brand_list.txt`, `brand_mapping.txt`)
+- **라우팅**: 이미지 생성 키워드 감지 시 → `ImagePromptGenerator`, 아니면 → `CapabilityDetector`
 
-**[이미지 생성 경로]**
-1. **EntityParser**: 제품 정보 추출
-2. **ImagePromptGenerator**: 제품 디자인 프롬프트 생성
-3. **ImageGenerator**: Gemini API로 이미지 생성
-4. **Synthesizer**: 이미지와 설명 통합
+**[SQL 워크플로우 경로 - 총 9개 노드]**
 
-**핵심 기능**:
+1. **CapabilityDetector** (GPT-4o-mini, temp=0.0)
+   - 시스템 처리 가능 여부 판단 (`data_scope`, `aggregation_type`)
 
-**Text-to-SQL**:
-- 자연어 질문을 PostgreSQL 쿼리로 자동 변환
-- 복잡한 JOIN, GROUP BY, HAVING 절 생성
-- 예: "토리든 보습력 좋아?" → `SELECT AVG(attribute_moisture) FROM preprocessed_reviews WHERE brand='토리든'`
+2. **ComplexityClassifier** (GPT-4o-mini, temp=0.0)
+   - 질문 복잡도 분류: `simple` / `medium` / `complex`
+   - **라우팅**: `simple` → SQLGenerator 직행, `medium/complex` → QuestionDecomposer
 
-**적응형 워크플로우**:
-- 질문 복잡도에 따라 분해 여부 결정
-- SQL 실행 결과가 불충분하면 자동 재생성
+3. **QuestionDecomposer** (GPT-4o-mini, temp=0.0)
+   - 복잡한 질문을 여러 하위 질문으로 분해
+   - 예: "빌리프와 VT 비교" → ["빌리프 리뷰 수집", "VT 리뷰 수집", "비교 분석"]
 
-**멀티모달 출력**:
-- 텍스트 분석 + 차트 시각화
-- 제품 패키징 디자인 생성 (예: "VT 다이소 버전 디자인")
+4. **SQLGenerator** (GPT-4o-mini, temp=0.0)
+   - 각 하위 질문마다 SQL 쿼리 자동 생성
+   - PostgreSQL Text-to-SQL 변환
+   - JSONB 쿼리 자동 생성 (`analysis->'장점'`, `jsonb_array_elements_text()` 등)
+   - 프롬프트: 494라인의 상세한 스키마 + 예시 6개 + 필터링 규칙
+   - 브랜드명 필터: `WHERE brand = '브랜드명'`
+   - 제품명 필터: `WHERE product_name LIKE '%제품명%'` (부분 매칭)
+
+5. **Executor**
+   - PostgreSQL에 SQL 실행
+   - 결과 DataFrame 반환
+   - **라우팅**: `complex` 질문이고 실패 쿼리 있으면 → SQLRefiner, 아니면 → ResponsePlanner
+
+6. **SQLRefiner** (GPT-4o-mini, temp=0.0)
+   - 실패한 쿼리를 에러 메시지 기반으로 재작성
+   - 최대 1회 재시도
+
+7. **ResponsePlanner** (GPT-4o-mini, temp=0.0)
+   - 시각화 전략 결정 (`visualization_strategy`: `none` / `auto` / `suggest`)
+   - Confidence 계산: `time_series` (0.7), `multi_comparison` (0.35), `distribution` (0.3) 등
+   - Auto threshold: 0.7 이상이면 자동 시각화 생성
+
+8. **OutputGenerator** (GPT-4o, temp=0.3)
+   - SQL 결과를 자연어 요약 텍스트로 변환
+   - 시각화 생성: Plotly 차트 (막대그래프, 선그래프, 히트맵 등)
+   - 비교 테이블 생성 (브랜드/제품 비교 시)
+
+9. **Synthesizer** (temp=0.3)
+   - 최종 답변 통합 (텍스트 + 시각화 + 테이블 + 메타데이터)
+
+**[이미지 생성 워크플로우 경로 - 3개 노드]**
+
+10. **ImagePromptGenerator** (GPT-4o, temp=0.7)
+    - 다이소 채널 리뷰 분석 → 디자인 키워드 추출
+    - Gemini 2.5 Flash용 Image-to-Image 프롬프트 생성
+
+11. **ImageGenerator** (Gemini 2.5 Flash Image)
+    - 3가지 패키징 옵션 자동 생성:
+      1. 7일치 샤쉐 파우치 (7ml)
+      2. 3일 트라이얼 키트 (9ml)
+      3. 10ml 미니 보틀
+    - 원본 제품 이미지 → 다이소 최적화 디자인 변환
+    - 저장 경로: `dashboard/generated_images/daiso/`
+
+12. **Synthesizer** (공통)
+    - SQL 워크플로우: 텍스트 + 시각화 통합
+    - 이미지 워크플로우: 3개 이미지 + 설명 통합
+
+**워크플로우 다이어그램**:
+```
+EntityParser → [이미지 키워드?]
+   ├─ Yes → ImagePromptGenerator → ImageGenerator → Synthesizer
+   └─ No  → CapabilityDetector → ComplexityClassifier → [복잡도?]
+              ├─ simple → SQLGenerator
+              └─ medium/complex → QuestionDecomposer → SQLGenerator
+                                    ↓
+                                 Executor → [실패 쿼리?]
+                                    ├─ Yes (complex만) → SQLRefiner → ResponsePlanner
+                                    └─ No → ResponsePlanner
+                                               ↓
+                                          OutputGenerator → Synthesizer
+```
+
+**LLM 사용**:
+- **GPT-4o-mini** (temp=0.0): EntityParser, CapabilityDetector, ComplexityClassifier, QuestionDecomposer, SQLGenerator, SQLRefiner, ResponsePlanner
+- **GPT-4o** (temp=0.3): OutputGenerator
+- **GPT-4o** (temp=0.7): ImagePromptGenerator
+- **Gemini 2.5 Flash Image**: ImageGenerator (Image-to-Image)
+
+**SQL 생성 예시**:
+```sql
+-- 예시 1: 속성별 집계 (JSONB 쿼리)
+SELECT
+    brand,
+    product_name,
+    analysis->'제품특성'->>'보습력' as 보습력평가,
+    COUNT(*) as review_count
+FROM preprocessed_reviews
+WHERE brand = '빌리프'
+  AND product_name LIKE '%모이스춰라이징밤%'
+  AND analysis->'제품특성'->'보습력' IS NOT NULL
+GROUP BY brand, product_name, analysis->'제품특성'->>'보습력'
+ORDER BY review_count DESC
+
+-- 예시 2: 장점 키워드 빈도 (JSONB 배열 펼치기)
+WITH advantage_keywords AS (
+    SELECT
+        jsonb_array_elements_text(analysis->'장점') as advantage,
+        review_clean,
+        rating
+    FROM preprocessed_reviews
+    WHERE brand = '빌리프'
+      AND product_name LIKE '%모이스춰라이징밤%'
+      AND jsonb_array_length(analysis->'장점') > 0
+)
+SELECT
+    advantage,
+    COUNT(*) as count,
+    jsonb_agg(jsonb_build_object('review_clean', review_clean)) as samples
+FROM advantage_keywords
+GROUP BY advantage
+ORDER BY count DESC
+LIMIT 10
+```
+
+**V5 대비 개선점**:
+- V5: 5-Node 순차, 14개 Tool 순차 실행 → V6: 12-Node 조건부 분기, 동적 SQL 생성
+- V5: 고정된 Tool → V6: LLM이 자동으로 SQL 생성 (유연성 ↑)
+- V5: 텍스트만 → V6: 텍스트 + 이미지 생성 (멀티모달)
+- V5: 단일 워크플로우 → V6: SQL / 이미지 생성 워크플로우 자동 라우팅
+- V6: 복잡도별 최적화 (simple 질문은 QuestionDecomposer 스킵)
 
 **작동 예시**:
 ```
