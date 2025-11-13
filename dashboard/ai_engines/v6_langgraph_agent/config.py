@@ -233,7 +233,7 @@ def _load_brand_list():
     """브랜드 리스트 로드"""
     try:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-        brand_file = os.path.join(base_dir, "brand_list.txt")
+        brand_file = os.path.join(base_dir, "preprocessor2", "brand_list.txt")
 
         with open(brand_file, 'r', encoding='utf-8') as f:
             brands = [line.strip() for line in f if line.strip()]
@@ -246,7 +246,7 @@ def _load_brand_mapping():
     """브랜드 매핑 로드 (영문 → 한글)"""
     try:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-        mapping_file = os.path.join(base_dir, "brand_mapping.txt")
+        mapping_file = os.path.join(base_dir, "preprocessor2", "brand_mapping.txt")
 
         mapping = {}
         with open(mapping_file, 'r', encoding='utf-8') as f:

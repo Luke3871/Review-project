@@ -34,19 +34,11 @@ dashboard/logs/
 data/
 RAG/data/
 
-# 문서 및 PT 자료
-PT 자료/
-참고논문/
-
 # 임시 파일
 practice*.py
 practice*.ipynb
 *_practice.py
 *_practice.ipynb
-
-# 텍스트 파일 (매핑, 리스트)
-brand_list.txt
-brand_mapping.txt
 
 # Markdown 문서 (버전 관련)
 V6_*.md

@@ -150,6 +150,7 @@ class Synthesizer:
         """
         generated_images = state.get("generated_images", [])
         design_keywords = state.get("design_keywords", [])
+        daiso_summary = state.get("daiso_channel_summary", "")
         entities = state.get("parsed_entities", {})
 
         # 브랜드/제품 정보
@@ -163,7 +164,7 @@ class Synthesizer:
         response_parts = [
             f"### 다이소 채널 최적화 디자인 시안",
             f"\n**원본 제품:** {brand_text} {product_text}",
-            f"\n**타겟 채널:** 다이소 (5,000원 가격대 뷰티)",
+            f"\n**타겟 채널:** 다이소",
         ]
 
         if design_keywords:
@@ -173,7 +174,13 @@ class Synthesizer:
         response_parts.append(f"\n\n생성된 디자인 시안 **{len(generated_images)}개**를 아래에서 확인하세요.")
         response_parts.append("\n\n#### 주요 특징")
         response_parts.append("- 실제 리뷰 데이터에서 추출한 키워드 반영")
-        response_parts.append("- 다이소 채널 특성: 귀여운 파스텔 톤, 10ml 미니 사이즈")
+
+        # 다이소 채널 특성: GPT-4o 요약 사용
+        if daiso_summary:
+            response_parts.append(f"- 다이소 채널 특성: {daiso_summary}")
+        else:
+            response_parts.append("- 다이소 채널 특성: 가성비 중심, 미니 사이즈 제품")
+
         response_parts.append("- 올리브영 프리미엄 제품의 브랜드 정체성 유지")
 
         return "\n".join(response_parts)

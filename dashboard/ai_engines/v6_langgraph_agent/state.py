@@ -147,13 +147,6 @@ class AgentState(TypedDict):
     # 12. 이미지 생성 워크플로우 (AI Visual Agent)
     workflow_type: Optional[str]  # "sql" | "image_generation"
     source_product_image: Optional[str]  # 올리브영 제품 이미지 경로
-    image_analysis: Optional[Dict[str, Any]]  # GPT-4o Vision 분석 결과
-    # {
-    #     "color_palette": ["green", "white"],
-    #     "style": "premium, sophisticated",
-    #     "container_type": "ampoule bottle",
-    #     "key_visual_elements": ["dropper", "transparent", "minimalist"]
-    # }
     design_keywords: Optional[List[str]]  # 올리브영 제품 리뷰 키워드
     daiso_channel_summary: Optional[str]  # Daiso 채널 특성 요약 (리뷰 기반)
     design_prompt: Optional[str]  # Gemini (Nano Banana) 프롬프트

@@ -1,285 +1,163 @@
-# Review Analysis Framework - LG H&H
+# Korean Cosmetics Review Analysis Framework
 
-한국 화장품 리뷰 데이터 수집 및 분석 프레임워크
-
-고려대학교 MSBA 캡스톤 프로젝트 - LG 생활건강
+한국 화장품 리뷰 데이터 분석 프레임워크
 
 ---
 
-## 📋 프로젝트 개요
+## 개요
 
-이 프로젝트는 한국의 주요 이커머스 플랫폼(쿠팡, 다이소, 올리브영)에서 화장품 리뷰를 수집하고, AI 기반 분석을 통해 소비자 인사이트를 도출하는 시스템입니다.
+한국 주요 이커머스 플랫폼(쿠팡, 다이소, 올리브영)의 화장품 리뷰를 수집하고 AI 기반 분석을 제공하는 시스템입니다.
 
 ### 주요 기능
 
-- 🔍 **자동 리뷰 수집**: 3개 플랫폼에서 314,285건의 리뷰 수집
-- 🤖 **AI 분석 엔진**: V6 LangGraph 기반 고급 분석 (속성, 감성, 트렌드 등)
-- 📊 **인터랙티브 대시보드**: Streamlit 기반 실시간 데이터 탐색
-- 💬 **자연어 질의**: "토리든 보습력 어때?" 같은 자연어로 분석 요청
-- 🎨 **자동 시각화**: 데이터에 맞는 차트 자동 생성
+- 자동 리뷰 수집 (314,285건)
+- V6 LangGraph 기반 AI 분석 엔진
+- Streamlit 인터랙티브 대시보드
+- 자연어 질의 및 자동 시각화
+- 제품 패키징 디자인 생성
 
 ---
 
-## 🏗️ 프로젝트 구조
+## 설치
 
-```
-ReviewFW_LG_hnh/
-├── collector/                  # 리뷰 수집 시스템
-│   ├── channels/              # 플랫폼별 크롤러 (쿠팡, 다이소, 올리브영)
-│   └── core/                  # 공통 수집 로직
-│
-├── dashboard/                  # 📊 메인 대시보드 애플리케이션
-│   ├── main.py                # 진입점 (로그인)
-│   ├── pages/                 # 분석 페이지
-│   │   ├── main_tab.py       # 분석 메인 허브
-│   │   ├── ai_chatbot_v6.py  # V6 AI 챗봇 (최신)
-│   │   ├── channel_analysis.py
-│   │   ├── brand_analysis.py
-│   │   └── ...
-│   ├── ai_engines/            # AI 엔진 (v1-v6 진화 과정)
-│   │   └── v6_langgraph_agent/  # 🌟 현재 메인 엔진
-│   ├── analyzer/              # 통계 분석 모듈
-│   ├── utils/                 # 유틸리티
-│   ├── .streamlit/
-│   │   ├── config.toml
-│   │   ├── secrets.toml.example
-│   │   └── secrets.toml      # API 키 (Git 제외)
-│   ├── .env.example           # 환경변수 예시
-│   └── SETUP.md               # 📖 상세 설치 가이드
-│
-├── preprocessor2/              # 데이터 전처리
-├── data/                       # 리뷰 데이터 (Git 제외)
-├── tests/                      # 테스트 데이터
-└── docker-compose.yml          # PostgreSQL + pgvector 설정
-```
+### 필수 요구사항
 
----
+- Python 3.9+
+- PostgreSQL 13+ (pgvector extension)
+- Docker (선택)
 
-## 🚀 빠른 시작
-
-### 1. 필수 요구사항
-
-- **Python**: 3.9 이상
-- **PostgreSQL**: 13 이상 (pgvector extension)
-- **Docker** (선택): PostgreSQL 설치 간소화
-
-### 2. 설치
+### 설치 방법
 
 ```bash
 # 저장소 클론
 git clone https://github.com/Luke3871/Review-project.git
 cd ReviewFW_LG_hnh
 
-# Python 패키지 설치
+# 패키지 설치
 pip install -r requirements.txt
-```
 
-### 3. 데이터베이스 설정
+# 환경변수 설정 (선택사항)
+cp .env.example .env
+# .env 파일을 열고 필요시 DB 비밀번호 수정
 
-#### Option A: Docker 사용 (권장)
-
-```bash
-# PostgreSQL + pgvector 실행
+# 데이터베이스 실행 (Docker)
 docker-compose up -d
 
-# 데이터베이스 임포트 (덤프 파일이 있는 경우)
-docker exec -i pgvec psql -U postgres cosmetic_reviews < cosmetic_reviews_backup.sql
-```
-
-#### Option B: 수동 설치
-
-상세한 가이드는 [DATABASE_TRANSFER_GUIDE.md](./DATABASE_TRANSFER_GUIDE.md)를 참조하세요.
-
-### 4. API 키 설정
-
-#### Streamlit Secrets 사용 (권장)
-
-```bash
+# API 키 설정
 cd dashboard/.streamlit
 cp secrets.toml.example secrets.toml
-```
+# secrets.toml 파일을 열고 API 키 입력
 
-`secrets.toml` 파일을 열고 실제 API 키 입력:
-
-```toml
-GEMINI_API_KEY = "your-actual-gemini-api-key"
-GOOGLE_API_KEY = "your-actual-google-api-key"
-OPENAI_API_KEY = "your-actual-openai-api-key"
-```
-
-**API 키 발급 방법**:
-- Google Gemini: https://makersuite.google.com/app/apikey
-- OpenAI: https://platform.openai.com/api-keys
-
-⚠️ **중요**: `secrets.toml` 파일은 절대 Git에 커밋하지 마세요!
-
-### 5. 대시보드 실행
-
-```bash
+# 대시보드 실행
 cd dashboard
 streamlit run main.py
 ```
 
-브라우저에서 `http://localhost:8501`로 접속
+브라우저에서 `http://localhost:8501` 접속
 
 ---
 
-## 🎯 주요 기능
+## API 키 설정
 
-### 1. AI 챗봇 (V6 LangGraph Agent)
+`dashboard/.streamlit/secrets.toml` 파일에 다음 키를 입력하세요:
 
-자연어로 리뷰 데이터를 질의하고 분석할 수 있습니다.
-
-**예시 질문**:
-- "토리든 전반적으로 어때?"
-- "올리브영에서 보습력 좋은 제품 추천해줘"
-- "라운드랩이랑 토리든 비교해줘"
-- "최근 3개월 VT 시카크림 평가는?"
-
-**V6 엔진 특징**:
-- 복잡한 쿼리 자동 분해
-- SQL 생성 및 자가 치유
-- 자동 시각화 생성
-- 이미지 생성 (제품 패키징 디자인 제안)
-
-### 2. 채널별 분석
-
-- 쿠팡, 다이소, 올리브영 플랫폼 비교
-- 채널별 인기 제품 및 트렌드
-
-### 3. 브랜드 분석
-
-- LG 생활건강 vs 경쟁사 비교
-- 브랜드별 속성 분석 (보습력, 향, 가격 등)
-
-### 4. 신조어 발견
-
-- 리뷰에서 새로운 키워드 자동 추출
-- 트렌드 키워드 분석
-
----
-
-## 🧠 AI 엔진 진화 과정
-
-이 프로젝트는 6개 버전을 거쳐 발전했습니다:
-
-| 버전 | 이름 | 특징 |
-|------|------|------|
-| V1 | Rule-based | 통계 기반 규칙 엔진 |
-| V2 | LLM Report | GPT를 활용한 인사이트 생성 |
-| V3 | Multi-Agent | Planning → Execution → Response |
-| V4 | ReAct Agent | 계층적 검색 + Map-Reduce |
-| V5 | LangGraph (Basic) | 14개 Tool + 5개 Node |
-| **V6** | **LangGraph (Advanced)** | **복잡한 쿼리 처리 + 이미지 생성** ⭐ |
-
-**V6 아키텍처**:
+```toml
+GEMINI_API_KEY = "your-gemini-api-key"
+GOOGLE_API_KEY = "your-google-api-key"
+OPENAI_API_KEY = "your-openai-api-key"
 ```
-Query → Entity Parsing → Capability Detection → Complexity Classification
-  → [Simple/Medium/Complex 분기]
-    → SQL Generation → Execution → [Refinement if failed]
-      → Response Planning → Output Generation → Synthesis
+
+**API 키 발급:**
+- Google Gemini: https://makersuite.google.com/app/apikey
+- OpenAI: https://platform.openai.com/api-keys
+
+---
+
+## 사용 예시
+
+### AI 챗봇 질의
+
+```
+"토리든 전반적으로 어때?"
+"올리브영에서 보습력 좋은 제품 추천해줘"
+"라운드랩이랑 토리든 비교해줘"
+"VT 다이소 버전 디자인 만들어줘"
 ```
 
 ---
 
-## 📊 데이터 현황
+## 프로젝트 구조
 
-- **총 리뷰 수**: 314,285건
-- **채널**: 쿠팡, 다이소, 올리브영
-- **브랜드**: 576개
-- **카테고리**: 스킨케어, 메이크업, 선케어 등 15개
-- **분석된 속성**: 보습력, 발림성, 향, 지속력, 커버력 등 10+개
+```
+ReviewFW_LG_hnh/
+├── collector/              # 리뷰 수집 시스템
+├── dashboard/              # Streamlit 대시보드
+│   ├── main.py            # 진입점
+│   ├── pages/             # 분석 페이지
+│   ├── ai_engines/        # AI 엔진 (v1-v6)
+│   │   └── v6_langgraph_agent/  # 메인 엔진
+│   └── .streamlit/        # 설정 및 API 키
+├── preprocessor2/         # 데이터 전처리
+└── docker-compose.yml     # PostgreSQL 설정
+```
 
 ---
 
-## 🔧 환경변수 설정
+## 데이터
 
-### Database
+- 총 리뷰: 314,285건
+- 채널: 쿠팡, 다이소, 올리브영
+- 브랜드: 576개
+- 카테고리: 34개 (스킨케어, 메이크업 등)
+
+---
+
+## AI 엔진 버전
+
+| 버전 | 특징 |
+|------|------|
+| V1 | Rule-based |
+| V2 | LLM Report |
+| V3 | Multi-Agent |
+| V4 | ReAct Agent |
+| V5 | LangGraph Basic |
+| **V6** | **LangGraph Advanced + Image Generation** |
+
+---
+
+## 환경변수
+
+`.env.example` 파일을 `.env`로 복사하여 사용하세요.
 
 ```env
+# Database (docker-compose.yml에서 사용)
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=cosmetic_reviews
 DB_USER=postgres
-DB_PASSWORD=your-password
+DB_PASSWORD=postgres
+
+# API Keys (dashboard/.streamlit/secrets.toml에서도 설정 필요)
+GEMINI_API_KEY=your-key
+GOOGLE_API_KEY=your-key
+OPENAI_API_KEY=your-key
 ```
 
-### API Keys
-
-```env
-GEMINI_API_KEY=your-gemini-key
-GOOGLE_API_KEY=your-google-key
-OPENAI_API_KEY=your-openai-key
-```
-
-### Optional
-
-```env
-DASHBOARD_USERS=admin:password,user1:pass123
-LOG_LEVEL=INFO
-```
-
-자세한 설정 방법은 [dashboard/SETUP.md](dashboard/SETUP.md)를 참조하세요.
+**참고**: `.env` 파일은 로컬 개발용이며, 프로덕션 환경에서는 반드시 강력한 비밀번호로 변경하세요.
 
 ---
 
-## 🐛 트러블슈팅
+## 추가 문서
 
-### PostgreSQL 연결 실패
-
-```bash
-# PostgreSQL 상태 확인
-docker ps
-
-# 로그 확인
-docker logs pgvec
-```
-
-### 한글 폰트 깨짐
-
-- **Windows**: 맑은 고딕 자동 사용
-- **macOS**: AppleGothic 자동 사용
-- **Linux**: NanumGothic 설치 필요
-  ```bash
-  sudo apt-get install fonts-nanum
-  ```
-
-### API 키 오류
-
-1. API 키에 공백이 없는지 확인
-2. 키가 활성화되어 있는지 확인
-3. 사용량 한도 초과 여부 확인
-
-더 많은 문제 해결 방법은 [dashboard/SETUP.md](dashboard/SETUP.md)의 Troubleshooting 섹션을 참조하세요.
+- [dashboard/SETUP.md](dashboard/SETUP.md) - 상세 설치 가이드
+- [DATABASE_TRANSFER_GUIDE.md](DATABASE_TRANSFER_GUIDE.md) - DB 마이그레이션 가이드
 
 ---
 
-## 📚 추가 문서
+## 라이선스
 
-- [dashboard/SETUP.md](dashboard/SETUP.md) - 상세 설치 및 설정 가이드
-- [DATABASE_TRANSFER_GUIDE.md](DATABASE_TRANSFER_GUIDE.md) - 데이터베이스 마이그레이션 가이드
-
----
-
-## 👥 팀 정보
-
-**고려대학교 MSBA 캡스톤 프로젝트**
-- **파트너**: LG 생활건강
-- **팀**: Team 7
-- **팀원**: 박지연, 임현석
+이 프로젝트는 교육 및 연구 목적으로 개발되었습니다.
 
 ---
 
-## 📄 라이선스
-
-이 프로젝트는 LG 생활건강을 위한 캡스톤 프로젝트입니다.
-
----
-
-## 🤝 기여
-
-문제가 발생하거나 개선 사항이 있다면 [GitHub Issues](https://github.com/Luke3871/Review-project/issues)에 등록해주세요.
-
----
-
-**Last Updated**: 2025-01-12
+**Last Updated**: 2025-11-13
