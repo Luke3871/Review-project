@@ -77,8 +77,8 @@ streamlit run main.py
 - [DB 백업 파일 다운로드](https://drive.google.com/file/d/1TbibsQ1RcKGwkDGH6pGkVWQjdVrUdSqs/view?usp=sharing) (필수, 1.6GB)
   - 파일명: `cosmetic_reviews_backup_20251113.sql.gz`
   - 포함: reviews 테이블, preprocessed_reviews 테이블
-  - 다운로드 후 **프로젝트 루트 디렉토리**(`ReviewFW_LG_hnh/`)에 배치
-- [리뷰 이미지 파일 다운로드](https://drive.google.com/file/d/1cUSjNwkzJVXz--kvQQ0ujjC2bvz_Dhyt/view?usp=sharing) (선택, 2MB)
+- [리뷰 이미지 파일 다운로드](https://drive.google.com/file/d/1cUSjNwkzJVXz--kvQQ0ujjC2bvz_Dhyt/view?usp=sharing) 
+하드코딩된 경로 사용, V6 prompt_generator.py
 
 ---
 
